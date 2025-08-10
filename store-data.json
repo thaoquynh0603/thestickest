@@ -1,0 +1,205 @@
+{
+  "store": {
+    "title": "Custom Sticker Store",
+    "subtitle": "Find the perfect stickers for every occasion",
+    "categories": [
+      {
+        "id": "birthday",
+        "title": "Birthday Stickers",
+        "description": "Make birthdays extra special with personalized stickers",
+        "image": "https://placehold.co/600x400/ffe36b/111?text=Birthday+Stickers",
+        "features": ["Personalized names", "Age-specific designs", "Party themes", "Gift tags"],
+        "use_cases": ["Birthday parties", "Gift wrapping", "Party favors", "Cake decorations"],
+        "materials": ["Glossy", "Matte", "Holographic"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.50",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Personalized name stickers",
+          "Age number stickers",
+          "Birthday cake designs",
+          "Balloon and confetti themes"
+        ]
+      },
+      {
+        "id": "baby-shower",
+        "title": "Baby Shower Stickers",
+        "description": "Celebrate the upcoming arrival with adorable baby shower stickers",
+        "image": "https://placehold.co/600x400/dbccff/111?text=Baby+Shower+Stickers",
+        "features": ["Gender-neutral options", "Baby themes", "Gift labels", "Party decorations"],
+        "use_cases": ["Baby showers", "Gift wrapping", "Party favors", "Nursery decorations"],
+        "materials": ["Matte", "Glossy", "Clear"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.75",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Baby animal designs",
+          "Gift tag stickers",
+          "Party favor labels",
+          "Nursery wall decals"
+        ]
+      },
+      {
+        "id": "gender-reveal",
+        "title": "Gender Reveal Stickers",
+        "description": "Announce the big news with creative gender reveal stickers",
+        "image": "https://placehold.co/600x400/efe7fb/111?text=Gender+Reveal+Stickers",
+        "features": ["Pink/Blue themes", "Reveal designs", "Party decorations", "Social media ready"],
+        "use_cases": ["Gender reveal parties", "Social media announcements", "Party decorations", "Gift reveals"],
+        "materials": ["Glossy", "Holographic", "Matte"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$3.00",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Pink/Blue reveal designs",
+          "Question mark themes",
+          "Party decoration stickers",
+          "Social media announcement stickers"
+        ]
+      },
+      {
+        "id": "wedding",
+        "title": "Wedding Stickers",
+        "description": "Add elegance to your special day with custom wedding stickers",
+        "image": "https://placehold.co/600x400/ffffff/111?text=Wedding+Stickers",
+        "features": ["Monogram designs", "Wedding themes", "Elegant finishes", "Personalized details"],
+        "use_cases": ["Wedding favors", "Gift wrapping", "Table decorations", "Program covers"],
+        "materials": ["Matte", "Gold foil", "Clear", "Glossy"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$3.50",
+        "min_quantity": 25,
+        "design_time": "48-72 hours",
+        "examples": [
+          "Couple monograms",
+          "Wedding date stickers",
+          "Table number decals",
+          "Favor bag labels"
+        ]
+      },
+      {
+        "id": "party",
+        "title": "Party Stickers",
+        "description": "Make any party unforgettable with custom party stickers",
+        "image": "https://placehold.co/600x400/ffe36b/111?text=Party+Stickers",
+        "features": ["Theme customization", "Bold colors", "Fun designs", "Party themes"],
+        "use_cases": ["Birthday parties", "Graduation parties", "Holiday celebrations", "Corporate events"],
+        "materials": ["Glossy", "Holographic", "Matte", "Removable"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.25",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Party theme stickers",
+          "Name tag stickers",
+          "Decoration stickers",
+          "Favor bag labels"
+        ]
+      },
+      {
+        "id": "christmas",
+        "title": "Christmas Stickers",
+        "description": "Spread holiday cheer with festive Christmas stickers",
+        "image": "https://placehold.co/600x400/dbccff/111?text=Christmas+Stickers",
+        "features": ["Holiday themes", "Festive colors", "Gift labels", "Decorations"],
+        "use_cases": ["Gift wrapping", "Christmas cards", "Party decorations", "Holiday crafts"],
+        "materials": ["Glossy", "Holographic", "Matte", "Removable"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.50",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Christmas tree designs",
+          "Gift tag stickers",
+          "Holiday greeting stickers",
+          "Ornament decals"
+        ]
+      },
+      {
+        "id": "easter",
+        "title": "Easter Stickers",
+        "description": "Hop into Easter with adorable seasonal stickers",
+        "image": "https://placehold.co/600x400/efe7fb/111?text=Easter+Stickers",
+        "features": ["Easter themes", "Pastel colors", "Spring designs", "Egg decorations"],
+        "use_cases": ["Easter egg hunts", "Gift wrapping", "Party decorations", "Craft projects"],
+        "materials": ["Glossy", "Matte", "Removable", "Clear"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.25",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Easter bunny designs",
+          "Egg decoration stickers",
+          "Spring flower themes",
+          "Gift basket labels"
+        ]
+      },
+      {
+        "id": "pets",
+        "title": "Pet Stickers",
+        "description": "Show off your furry friends with custom pet stickers",
+        "image": "https://placehold.co/600x400/ffffff/111?text=Pet+Stickers",
+        "features": ["Pet portraits", "Animal themes", "Name tags", "Pet-safe materials"],
+        "use_cases": ["Pet accessories", "Water bottles", "Laptop decals", "Pet ID tags"],
+        "materials": ["Matte", "Glossy", "Waterproof", "Removable"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.75",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Pet portrait stickers",
+          "Animal paw prints",
+          "Pet name tags",
+          "Breed-specific designs"
+        ]
+      },
+      {
+        "id": "friends",
+        "title": "Friend Group Stickers",
+        "description": "Celebrate friendship with custom group stickers",
+        "image": "https://placehold.co/600x400/ffe36b/111?text=Friend+Group+Stickers",
+        "features": ["Group themes", "Inside jokes", "Memories", "Personalized names"],
+        "use_cases": ["Friend gifts", "Group events", "Memory books", "Social media"],
+        "materials": ["Glossy", "Holographic", "Matte", "Removable"],
+        "sizes": ["Small (1-2 inch)", "Medium (2-3 inch)", "Large (3-4 inch)"],
+        "starting_price": "$2.50",
+        "min_quantity": 10,
+        "design_time": "24-48 hours",
+        "examples": [
+          "Group photo stickers",
+          "Inside joke designs",
+          "Friendship quotes",
+          "Memory stickers"
+        ]
+      },
+      {
+        "id": "custom",
+        "title": "Custom Stickers",
+        "description": "Create anything you can imagine with our custom sticker service",
+        "image": "https://placehold.co/600x400/dbccff/111?text=Custom+Stickers",
+        "features": ["Fully custom designs", "Any theme", "Unique shapes", "Special effects"],
+        "use_cases": ["Business branding", "Personal projects", "Special events", "Creative expression"],
+        "materials": ["All finishes available", "Specialty materials", "Custom shapes", "Special effects"],
+        "sizes": ["Any size", "Custom shapes", "Large format", "Bulk orders"],
+        "starting_price": "$3.00",
+        "min_quantity": 10,
+        "design_time": "48-72 hours",
+        "examples": [
+          "Business logos",
+          "Personal artwork",
+          "Event branding",
+          "Creative designs"
+        ]
+      }
+    ],
+    "features": {
+      "design": "Professional design included",
+      "revisions": "Unlimited revisions",
+      "quality": "Premium materials",
+      "shipping": "Fast worldwide shipping",
+      "support": "24/7 customer support"
+    }
+  }
+}

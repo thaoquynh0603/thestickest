@@ -1,0 +1,12 @@
+---
+description:This is rule that you have to refer every time you work with database (with supabase in particular)
+database name is thestickest mvp
+use basic security features as another e-commerce app.
+
+globs:
+alwaysApply: false
+---
+
+the project is 
+NEXT_PUBLIC_SUPABASE_URL=https://hyrjcmrvrxtepvlpmgxs.supabase.co
+

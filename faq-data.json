@@ -1,0 +1,189 @@
+{
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "subtitle": "Everything you need to know about custom stickers from The Stickest",
+    "sections": [
+      {
+        "title": "Ordering & Design",
+        "questions": [
+          {
+            "question": "How long does it take to get my custom stickers?",
+            "answer": "Designs are delivered within 24-48 hours. Once approved, stickers are printed and shipped within 3-5 business days. Total turnaround time is typically 1-2 weeks from order to delivery."
+          },
+          {
+            "question": "What file formats do you accept for custom designs?",
+            "answer": "We accept high-resolution files in PNG, JPG, PDF, AI, EPS, and SVG formats. For best results, provide vector files (AI, EPS, SVG) or high-resolution images (300 DPI minimum)."
+          },
+          {
+            "question": "Can you create a design from scratch based on my ideas?",
+            "answer": "Absolutely! Our design team can create custom stickers from your descriptions, sketches, or ideas. Just share your vision and we'll bring it to life with professional design expertise."
+          },
+          {
+            "question": "What's the minimum order quantity?",
+            "answer": "We offer flexible quantities starting from just 10 stickers. Larger quantities get better per-unit pricing. Contact us for bulk pricing on orders over 500 stickers."
+          },
+          {
+            "question": "Do you offer rush orders?",
+            "answer": "Yes! We offer expedited design and printing services for urgent orders. Rush fees apply and vary based on turnaround time needed. Contact us for specific pricing."
+          }
+        ]
+      },
+      {
+        "title": "Quality & Materials",
+        "questions": [
+          {
+            "question": "What materials do you use for stickers?",
+            "answer": "We use premium vinyl materials that are waterproof, UV-resistant, and dishwasher safe. Our stickers feature vibrant, fade-resistant inks and precise die-cut edges for professional results."
+          },
+          {
+            "question": "Are your stickers safe for children and pets?",
+            "answer": "Yes! All our materials are non-toxic and safe for children and pets. We use FDA-compliant inks and adhesives that meet safety standards for household use."
+          },
+          {
+            "question": "How long do the stickers last?",
+            "answer": "Our stickers are designed to last 3-5 years outdoors and even longer indoors. They're UV-resistant, waterproof, and won't fade or peel under normal conditions."
+          },
+          {
+            "question": "Can stickers be removed without leaving residue?",
+            "answer": "Yes! We offer removable adhesive options that peel off cleanly without leaving sticky residue. Perfect for temporary applications or when you want to reposition stickers."
+          },
+          {
+            "question": "What finishes do you offer?",
+            "answer": "We offer matte, glossy, holographic, and clear finishes. Each finish has unique properties - matte resists fingerprints, glossy provides vibrant shine, holographic adds rainbow effects, and clear blends seamlessly."
+          }
+        ]
+      },
+      {
+        "title": "Pricing & Payment",
+        "questions": [
+          {
+            "question": "How much do custom stickers cost?",
+            "answer": "Pricing varies based on quantity, size, and complexity. Small orders start around $2-3 per sticker. We offer volume discounts and transparent pricing - get an instant quote on our website."
+          },
+          {
+            "question": "Is there a design fee?",
+            "answer": "Design services are included in your order! We don't charge separate design fees. Your quote includes professional design, revisions, and final artwork preparation."
+          },
+          {
+            "question": "What payment methods do you accept?",
+            "answer": "We accept all major credit cards, PayPal, and Apple Pay. All payments are processed securely through Stripe with 256-bit encryption to protect your information."
+          },
+          {
+            "question": "When do I pay for my order?",
+            "answer": "We require a small deposit to start design work. The remaining balance is due only after you approve the final design. This ensures you're completely satisfied before paying the full amount."
+          },
+          {
+            "question": "Do you offer refunds?",
+            "answer": "Yes! We offer a 100% money-back guarantee. If you're not satisfied with your design or if stickers arrive damaged, we'll provide a full refund or free replacement."
+          }
+        ]
+      },
+      {
+        "title": "Shipping & Delivery",
+        "questions": [
+          {
+            "question": "Where do you ship?",
+            "answer": "We ship worldwide! Domestic shipping is free on orders over $50. International shipping rates vary by location and are calculated at checkout."
+          },
+          {
+            "question": "How are stickers packaged?",
+            "answer": "Stickers are carefully packaged in protective sleeves and shipped in sturdy boxes to prevent damage. Each order includes care instructions and application tips."
+          },
+          {
+            "question": "Do you provide tracking information?",
+            "answer": "Yes! All orders include tracking numbers. You'll receive email updates at each step - from design approval to delivery confirmation."
+          },
+          {
+            "question": "What if my stickers arrive damaged?",
+            "answer": "We stand behind our quality! If stickers arrive damaged, we'll replace them free of charge. Just send us photos and we'll ship replacements immediately."
+          },
+          {
+            "question": "Can I pick up my order locally?",
+            "answer": "Local pickup is available in select areas. Contact us to check availability in your location and arrange pickup times."
+          }
+        ]
+      },
+      {
+        "title": "Support & Service",
+        "questions": [
+          {
+            "question": "How can I contact customer support?",
+            "answer": "We're here to help 24/7! Email us at hello@thestickest.com, use our live chat, or call our support line. We typically respond within 2 hours."
+          },
+          {
+            "question": "Do you offer design revisions?",
+            "answer": "Yes! We include unlimited revisions until you're 100% satisfied. Our goal is to create exactly what you envision, so we'll keep refining until it's perfect."
+          },
+          {
+            "question": "Can you help me choose the right sticker type?",
+            "answer": "Absolutely! Our sticker experts can recommend the best materials, finishes, and sizes for your specific use case. Just tell us how you plan to use the stickers."
+          },
+          {
+            "question": "Do you offer bulk discounts for events?",
+            "answer": "Yes! We offer special pricing for large events like weddings, corporate functions, and parties. Contact us for custom quotes on bulk orders."
+          },
+          {
+            "question": "Can you create stickers for businesses?",
+            "answer": "Of course! We work with businesses of all sizes to create branded stickers, product labels, and promotional materials. We can match your brand colors and style guidelines."
+          }
+        ]
+      },
+      {
+        "title": "Terms & Conditions",
+        "questions": [
+          {
+            "question": "What are your terms of service?",
+            "answer": "By using our services, you agree to provide accurate information, respect intellectual property rights, and use our stickers for lawful purposes only. We reserve the right to refuse service for inappropriate content."
+          },
+          {
+            "question": "What is your refund policy?",
+            "answer": "We offer a 100% money-back guarantee. If you're not satisfied with your design or if stickers arrive damaged, we'll provide a full refund or free replacement within 30 days of delivery."
+          },
+          {
+            "question": "What happens if my order is delayed?",
+            "answer": "While we strive for on-time delivery, delays can occur due to high demand or shipping issues. We'll keep you updated and may offer compensation for significant delays beyond our control."
+          },
+          {
+            "question": "Can I cancel my order?",
+            "answer": "Orders can be cancelled within 24 hours of placement if design work hasn't begun. Once design work starts, cancellation may incur a partial fee to cover design costs."
+          },
+          {
+            "question": "What are your intellectual property terms?",
+            "answer": "You retain ownership of your original content. We own the rights to our designs until final payment. Once paid, you receive full rights to use the final design for your intended purposes."
+          }
+        ]
+      },
+      {
+        "title": "Privacy Policy",
+        "questions": [
+          {
+            "question": "How do you protect my personal information?",
+            "answer": "We use industry-standard encryption and security measures to protect your data. Your personal information is never sold to third parties and is only used to fulfill your orders and provide customer support."
+          },
+          {
+            "question": "What information do you collect?",
+            "answer": "We collect contact information (name, email, address), order details, and payment information. We also collect usage data to improve our website and services. All data collection is transparent and consensual."
+          },
+          {
+            "question": "Do you use cookies?",
+            "answer": "Yes, we use essential cookies for website functionality and optional analytics cookies to improve user experience. You can control cookie preferences through your browser settings."
+          },
+          {
+            "question": "How long do you keep my data?",
+            "answer": "We retain order information for 7 years for tax purposes. Contact information is kept until you request deletion. You can request data deletion at any time by contacting us."
+          },
+          {
+            "question": "Do you share my information with third parties?",
+            "answer": "We only share information with trusted partners necessary for order fulfillment (payment processors, shipping companies). We never sell or rent your personal information to marketing companies."
+          }
+        ]
+      }
+    ],
+    "contact": {
+      "title": "Still have questions?",
+      "subtitle": "We're here to help! Get in touch with our friendly team.",
+      "email": "hello@thestickest.com",
+      "cta_text": "Send us a message"
+    }
+  }
+}
