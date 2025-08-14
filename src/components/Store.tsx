@@ -5,6 +5,7 @@ import { useState } from 'react';
 
 interface StoreCategory {
   id: string;
+  slug: string;
   title: string;
   description: string;
   image: string;
@@ -111,7 +112,7 @@ export default function Store({ data }: StoreProps) {
                   <p className="store-category-description">{category.description}</p>
                   
                   <Link 
-                    href={`/store/${category.id}`} 
+                    href={`/store/${category.slug}`} 
                     className="store-category-cta"
                   >
                     View {category.title}

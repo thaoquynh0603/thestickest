@@ -33,6 +33,7 @@ export default async function StorePage() {
     subtitle: "Find the perfect stickers for every occasion",
     categories: products.map((product: any) => ({
       id: product.id || '',
+      slug: product.slug || '',
       title: product.title || 'Untitled Product',
       description: product.description || 'No description available',
       image: product.product_image_url || '/placeholder-image.jpg',

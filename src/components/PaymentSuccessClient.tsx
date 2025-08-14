@@ -3,8 +3,34 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
+interface Product {
+  id: string;
+  title: string;
+  slug: string;
+  price: number;
+  description?: string;
+}
+
+interface PaymentEvent {
+  amount: number;
+  currency: string;
+  status: string;
+  event_type: string;
+}
+
+interface Application {
+  id: string;
+  email?: string;
+  design_code: string;
+  status: string;
+  created_at: string;
+  products?: Product;
+  payment_events?: PaymentEvent[];
+  total_amount?: number;
+}
+
 interface PaymentSuccessClientProps {
-  application: any;
+  application: Application;
   designCode: string;
 }
 
@@ -32,6 +58,38 @@ export function PaymentSuccessClient({ application, designCode }: PaymentSuccess
     };
   }, [router]);
 
+  // Helper function to get the amount paid
+  const getAmountPaid = (): string => {
+    // Try to get amount from payment events first
+    if (application.payment_events && application.payment_events.length > 0) {
+      const latestPayment = application.payment_events[0];
+      if (latestPayment.amount > 0) {
+        return `${latestPayment.currency} ${latestPayment.amount.toFixed(2)}`;
+      }
+    }
+    
+    // Fallback to total_amount or product price
+    if (application.total_amount && application.total_amount > 0) {
+      return `$${application.total_amount.toFixed(2)}`;
+    }
+    
+    if (application.products?.price) {
+      return `$${application.products.price.toFixed(2)}`;
+    }
+    
+    return '$2.00'; // Default fallback
+  };
+
+  // Helper function to get product title
+  const getProductTitle = (): string => {
+    return application.products?.title || 'Design Request';
+  };
+
+  // Helper function to get product slug
+  const getProductSlug = (): string => {
+    return application.products?.slug || '';
+  };
+
   return (
     <div className="payment-success-page">
       <div className="container">
@@ -55,15 +113,21 @@ export function PaymentSuccessClient({ application, designCode }: PaymentSuccess
             <div className="details-grid">
               <div className="detail-item">
                 <span>Product:</span>
-                <span>{application.products?.title || 'Design Request'}</span>
+                <span>{getProductTitle()}</span>
               </div>
               <div className="detail-item">
                 <span>Email:</span>
-                <span>{application.email}</span>
+                <span>{application.email || 'Not provided'}</span>
               </div>
               <div className="detail-item">
                 <span>Amount Paid:</span>
-                <span>${application.total_amount || 2.00}</span>
+                <span>{getAmountPaid()}</span>
+              </div>
+              <div className="detail-item">
+                <span>Status:</span>
+                <span className={`status-${application.status.toLowerCase()}`}>
+                  {application.status.replace('_', ' ')}
+                </span>
               </div>
             </div>
           </div>
@@ -86,9 +150,11 @@ export function PaymentSuccessClient({ application, designCode }: PaymentSuccess
             <a href="/" className="btn btn-primary">
               Return to Home
             </a>
-            <a href={`/store/${application.products?.slug}`} className="btn btn-secondary">
-              View Product
-            </a>
+            {getProductSlug() && (
+              <a href={`/store/${getProductSlug()}`} className="btn btn-secondary">
+                View Product
+              </a>
+            )}
           </div>
         </div>
       </div>

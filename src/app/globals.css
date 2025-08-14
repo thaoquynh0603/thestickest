@@ -20,6 +20,42 @@
   will-change: auto;
 }
 
+/* Status indicators for payment success page */
+.status-draft {
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.status-submitted {
+  color: #059669;
+  font-weight: 500;
+}
+
+.status-payment_pending {
+  color: #d97706;
+  font-weight: 500;
+}
+
+.status-paid {
+  color: #059669;
+  font-weight: 500;
+}
+
+.status-in_design {
+  color: #2563eb;
+  font-weight: 500;
+}
+
+.status-completed {
+  color: #059669;
+  font-weight: 500;
+}
+
+.status-cancelled {
+  color: #dc2626;
+  font-weight: 500;
+}
+
 /* Product Carousel Styles */
 .product-carousel-section {
   width: 100%;
