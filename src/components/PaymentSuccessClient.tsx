@@ -8,7 +8,13 @@ interface Product {
   title: string;
   slug: string;
   price: number;
-  description?: string;
+  description: string | null;
+  subtitle: string | null;
+  product_image_url: string | null;
+  is_active: boolean | null;
+  template_id: string | null;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 interface PaymentEvent {
@@ -20,11 +26,14 @@ interface PaymentEvent {
 
 interface Application {
   id: string;
-  email?: string;
+  email: string | null;
   design_code: string;
-  status: string;
-  created_at: string;
-  products?: Product;
+  status: string | null;
+  created_at: string | null;
+  updated_at: string | null;
+  product_id: string | null;
+  selected_style_id: string | null;
+  products?: Product | null;
   payment_events?: PaymentEvent[];
   total_amount?: number;
 }
@@ -125,8 +134,8 @@ export function PaymentSuccessClient({ application, designCode }: PaymentSuccess
               </div>
               <div className="detail-item">
                 <span>Status:</span>
-                <span className={`status-${application.status.toLowerCase()}`}>
-                  {application.status.replace('_', ' ')}
+                <span className={`status-${application.status?.toLowerCase() || 'unknown'}`}>
+                  {application.status?.replace('_', ' ') || 'Unknown'}
                 </span>
               </div>
             </div>
