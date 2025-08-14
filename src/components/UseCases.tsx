@@ -19,10 +19,11 @@ export default function UseCases({ useCases, additionalBenefits }: Props) {
             </li>
           ))}
         </ul>
-        <div style={{ marginTop: 18 }}>
+        <div style={{ marginTop: 5, textAlign: 'center', display: 'flex', justifyContent: 'center' }}>
           <img
-            src="https://placehold.co/800x160/ffffff/111?text=Customer+love+%E2%98%85+4.9"
+            src="/customer_love.png"
             alt="Placeholder for rating/social proof"
+            style={{ height: '400px', width: 'auto' }}
           />
         </div>
       </div>

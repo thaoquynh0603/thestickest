@@ -19,9 +19,9 @@ export default function Hero({ attention, ctaText, buttonText }: Props) {
 
         <div className="card hero-visual" role="img" aria-label="Sticker mockup placeholder">
           <Image
-            src="https://placehold.co/520x320/FFE36B/111?text=Your+Sticker+Mockup"
+            src="/hero-img.png"
             alt="Placeholder showing where your sticker artwork will appear"
-            width={520}
+            width={420}
             height={320}
             priority
           />

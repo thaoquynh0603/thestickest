@@ -1,116 +1,149 @@
 {
-    "landing_page": {
-      "attention": "Want Stunning Custom Stickers—Designed, Printed, and Shipped Directly to You?",
-      "interest": {
-        "headline": "Forget complicated processes and separate platforms. Our all-in-one custom sticker service gives you:",
-        "features": [
-          "Easy Custom Design: Quick, personalized designs tailored just for you (within 48 hours).",
-          "High-Quality Production: Premium-quality stickers, precisely printed to impress.",
-          "Hassle-free Shipping: Delivered straight to your door, stress-free and on-time."
-        ],
-        "use_cases": [
-          "Birthdays",
-          "Weddings",
-          "Parties",
-          "Baby Showers and Gender Reveals",
-          "Christmas and Easter",
-          "Pets and Friend Groups"
-        ],
-        "additional_benefits": [
-          "Risk-free with a fully refundable deposit.",
-          "Simple, stress-free revision process."
-        ]
-      },
-      "desire": "Imagine the excitement as your custom stickers arrive—beautifully packaged, perfectly personalized, and ready to delight friends and family. Make every moment unforgettable, effortlessly.",
-      "action": {
-        "cta_text": "Your perfect stickers await—order today!",
-        "button_text": "Create & Order My Stickers"
-      },
-      "worry_free_experience": {
-        "title": "Worry-Free Experience",
-        "description": "We’re committed to making your custom sticker experience completely stress-free, from start to finish:",
-        "items": [
-          {
-            "label": "Risk-Free Design",
-            "detail": "Fully refundable deposit if you're not completely satisfied with your design."
-          },
-          {
-            "label": "Pay Only After Approval",
-            "detail": "No surprises—you only pay for stickers after you've approved the final design."
-          },
-          {
-            "label": "Quality You Can Trust",
-            "detail": "If your stickers arrive damaged or don't match your approved design, you'll receive a full refund or free replacement."
-          },
-          {
-            "label": "Fast Turnaround & Reliable Shipping",
-            "detail": "Designs delivered within 24 hours. Stickers shipped quickly via trusted AusPost with easy tracking."
-          },
-          {
-            "label": "Friendly 24-Hour Support",
-            "detail": "Need help? We’re here for you around the clock with fast, responsive customer support."
-          },
-          {
-            "label": "Secure, Hassle-Free Payment",
-            "detail": "Payments processed securely through Stripe, ensuring your information stays safe and protected."
-          }
-        ],
-        "closing": "Enjoy total peace of mind—we’ve got you covered every step of the way."
-      },
-      "showcase": {
-        "title": "Do you want a sticker?",
-        "subtitle": "See how people use advanced features to make it pop.",
-        "overlay": {
-          "title": "Premium custom stickers, worry-free",
-          "bullets": [
-            "Waterproof and dishwasher safe",
-            "Vibrant, fade-resistant inks",
-            "Precise die-cut edges",
-            "Holographic and matte finishes",
-            "24-hour design turnaround"
+  "landing_page": {
+    "attention": "Want Stunning Custom Stickers—Designed, Printed, and Shipped Directly to You?",
+    "interest": {
+      "headline": "Forget complicated processes and separate platforms. Our all-in-one custom sticker service gives you:",
+      "features": [
+        {
+          "icon": "/easy_custom_design.png",
+          "image_url": "/easy_custom_design.png",
+          "title": "Easy Custom Design",
+          "description": "Quick, personalized designs tailored just for you (within 48 hours)."
+        },
+        {
+          "icon": "/high-quality-production.png",
+          "image_url": "/high-quality-production.png",
+          "title": "High-Quality Production",
+          "description": "Premium-quality stickers, precisely printed to impress."
+        },
+        {
+          "icon": "/hassle-free shipping.png",
+          "image_url": "/hassle-free shipping.png",
+          "title": "Hassle-free Shipping",
+          "description": "Delivered straight to your door, stress-free and on-time."
+        }
+      ],
+      "use_cases": [
+        "Birthdays",
+        "Weddings",
+        "Parties",
+        "Baby Showers and Gender Reveals",
+        "Christmas and Easter",
+        "Pets and Friend Groups"
+      ],
+      "additional_benefits": [
+        "Risk-free with a fully refundable deposit.",
+        "Simple, stress-free revision process."
+      ]
+    },
+    "desire": "Imagine the excitement as your custom stickers arrive—beautifully packaged, perfectly personalized, and ready to delight friends and family. Make every moment unforgettable, effortlessly.",
+    "action": {
+      "cta_text": "Your perfect stickers await—order today!",
+      "button_text": "Create & Order My Stickers"
+    },
+    "worry_free_experience": {
+      "title": "Worry-Free Experience",
+      "description": "We’re committed to making your custom sticker experience completely stress-free, from start to finish:",
+      "items": [
+        {
+          "label": "Risk-Free Design",
+          "detail": "Fully refundable deposit if you're not completely satisfied with your design."
+        },
+        {
+          "label": "Pay Only After Approval",
+          "detail": "No surprises—you only pay for stickers after you've approved the final design."
+        },
+        {
+          "label": "Quality You Can Trust",
+          "detail": "If your stickers arrive damaged or don't match your approved design, you'll receive a full refund or free replacement."
+        },
+        {
+          "label": "Fast Turnaround & Reliable Shipping",
+          "detail": "Designs delivered within 24 hours. Stickers shipped quickly via trusted AusPost with easy tracking."
+        },
+        {
+          "label": "Friendly 24-Hour Support",
+          "detail": "Need help? We’re here for you around the clock with fast, responsive customer support."
+        },
+        {
+          "label": "Secure, Hassle-Free Payment",
+          "detail": "Payments processed securely through Stripe, ensuring your information stays safe and protected."
+        }
+      ],
+      "closing": "Enjoy total peace of mind—we’ve got you covered every step of the way."
+    },
+    "showcase": {
+      "title": "Sticker Showcase",
+      "subtitle": "See our amazing stickers in action.",
+      "carousels": [
+        {
+          "title": "Custom Sticker Collection 1",
+          "items": [
+            {
+              "image": "/carousel-1.png",
+              "caption": "Message 1 for carousel 1",
+              "features": ["die-cut", "glossy", "fast-turnaround"],
+              "unique": {
+                "title": "Message 2 for carousel 1",
+                "bullets": ["Message 3 for carousel 1"],
+                "position": "top-right"
+              }
+            }
           ]
         },
-        "feature_labels": {
-          "die-cut": "Die-cut",
-          "holographic": "Holographic",
-          "matte": "Matte",
-          "waterproof": "Waterproof",
-          "qr": "QR code",
-          "kiss-cut": "Kiss-cut",
-          "glossy": "Glossy",
-          "laminated": "Laminated",
-          "removable": "Removable",
-          "clear": "Clear"
+        {
+          "title": "Custom Sticker Collection 2",
+          "items": [
+            {
+              "image": "/carousel-2.png",
+              "caption": "Message 1 for carousel 2",
+              "features": ["matte", "clear"],
+              "unique": {
+                "title": "Message 2 for carousel 2",
+                "bullets": ["Message 3 for carousel 2"],
+                "position": "bottom-left"
+              }
+            }
+          ]
         },
-        "carousels": [
-          {
-            "title": "Events",
-            "items": [
-              { "image": "https://placehold.co/480x320/ffe36b/111?text=Birthday+Die-Cut", "caption": "Birthday favors", "features": ["die-cut", "glossy", "fast-turnaround"], "unique": { "title": "Die-Cut Precision", "bullets": ["Crisp edges around any shape", "Vibrant glossy finish", "Safe for kids"], "position": "top-right" } },
-              { "image": "https://placehold.co/480x320/dbccff/111?text=Wedding+Monogram", "caption": "Wedding monograms", "features": ["matte", "clear"], "unique": { "title": "Elegant Matte Finish", "bullets": ["Subtle, anti-glare texture", "Looks premium in photos"], "position": "bottom-left" } },
-              { "image": "https://placehold.co/480x320/efe7fb/111?text=Party+Name+Tags", "caption": "Party name tags", "features": ["removable", "laminated"], "unique": { "title": "Removable Adhesive", "bullets": ["Leaves no residue", "Perfect for temporary use"], "position": "center-right" } },
-              { "image": "https://placehold.co/480x320/ffffff/111?text=Baby+Shower", "caption": "Baby shower labels", "features": ["kiss-cut", "matte"], "unique": { "title": "Soft-Touch Matte", "bullets": ["Gentle pastel colors", "Kiss-cut for easy peel"], "position": "top-left" } }
-            ]
-          },
-          {
-            "title": "Business",
-            "items": [
-              { "image": "https://placehold.co/480x320/ffe36b/111?text=Brand+Logo", "caption": "Brand logos", "features": ["die-cut", "laminated", "waterproof"], "unique": { "title": "Durable Lamination", "bullets": ["Scratch-resistant surface", "Weatherproof outdoors"], "position": "bottom-right" } },
-              { "image": "https://placehold.co/480x320/dbccff/111?text=Product+Labels", "caption": "Product labels", "features": ["qr", "clear"], "unique": { "title": "QR-Ready Clarity", "bullets": ["Sharp codes that always scan", "Crystal-clear material"], "position": "center-left" } },
-              { "image": "https://placehold.co/480x320/efe7fb/111?text=Packaging+Seals", "caption": "Packaging seals", "features": ["glossy", "laminated"], "unique": { "title": "High-Gloss Pop", "bullets": ["Eye-catching shine", "Strong hold, easy peel"], "position": "top-right" } },
-              { "image": "https://placehold.co/480x320/ffffff/111?text=Promo+Giveaways", "caption": "Promo giveaways", "features": ["holographic", "die-cut"], "unique": { "title": "Holographic Wow", "bullets": ["Rainbow shimmer", "Social-media friendly"], "position": "bottom-left" } }
-            ]
-          },
-          {
-            "title": "Personal & Pets",
-            "items": [
-              { "image": "https://placehold.co/480x320/ffe36b/111?text=Laptop+Stickers", "caption": "Laptop decals", "features": ["holographic", "matte"], "unique": { "title": "Smudge-Free Matte", "bullets": ["Resists fingerprints", "Perfect for devices"], "position": "top-left" } },
-              { "image": "https://placehold.co/480x320/dbccff/111?text=Water+Bottle", "caption": "Water bottle stickers", "features": ["waterproof", "laminated"], "unique": { "title": "Waterproof + Dishwasher Safe", "bullets": ["Holds up to daily use", "Sealed edges prevent lift"], "position": "center-right" } },
-              { "image": "https://placehold.co/480x320/efe7fb/111?text=Pet+Name+Tag", "caption": "Pet name tags", "features": ["die-cut", "glossy"], "unique": { "title": "Pet-Safe Materials", "bullets": ["Non-toxic inks", "Extra-strong adhesive"], "position": "bottom-right" } },
-              { "image": "https://placehold.co/480x320/ffffff/111?text=Phone+Decals", "caption": "Phone decals", "features": ["clear", "removable"], "unique": { "title": "Clear, Edge-to-Edge", "bullets": ["Blends into your device", "Removes cleanly"], "position": "top-right" } }
-            ]
-          }
+        {
+          "title": "Custom Sticker Collection 3",
+          "items": [
+            {
+              "image": "/carousel-3.png",
+              "caption": "Message 1 for carousel 3",
+              "features": ["removable", "laminated"],
+              "unique": {
+                "title": "Message 2 for carousel 3",
+                "bullets": ["Message 3 for carousel 3"],
+                "position": "center-right"
+              }
+            }
+          ]
+        }
+      ],
+      "feature_labels": {
+        "die-cut": "Die-cut",
+        "holographic": "Holographic",
+        "matte": "Matte",
+        "waterproof": "Waterproof",
+        "qr": "QR code",
+        "kiss-cut": "Kiss-cut",
+        "glossy": "Glossy",
+        "laminated": "Laminated",
+        "removable": "Removable",
+        "clear": "Clear"
+      },
+      "overlay": {
+        "title": "Premium custom stickers, worry-free",
+        "bullets": [
+          "Waterproof and dishwasher safe",
+          "Vibrant, fade-resistant inks",
+          "Precise die-cut edges",
+          "Holographic and matte finishes",
+          "24-hour design turnaround"
         ]
       }
     }
   }
+}

@@ -1,12 +1,57 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import type { ProductWithCarousel } from '@/types/database';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
-export async function getProductBySlug(slug: string) {
+// Define the template type
+type Template = {
+  id: string;
+  name: string;
+  font_family: string | null;
+  palette: {
+    overlayBg?: string;
+    overlayInk?: string;
+    overlayMuted?: string;
+    accent?: string;
+    pageBg?: string;
+    breadcrumbBg?: string;
+    ctaSectionBg?: string;
+    processBg?: string;
+  };
+};
+
+// Define the carousel item type
+type CarouselItem = {
+  id: string;
+  image_url: string;
+  message_h1: string;
+  message_text: string | null;
+  position: string | null;
+  sort_order: number | null;
+  is_active: boolean | null;
+  product_id: string | null;
+};
+
+// Define the product type with relations
+type ProductWithRelations = {
+  id: string;
+  created_at: string | null;
+  updated_at: string | null;
+  title: string;
+  description: string | null;
+  slug: string;
+  is_active: boolean;
+  product_image_url: string | null;
+  template_id: string | null;
+  templates?: Template | null;
+  carousel_items?: CarouselItem[] | null;
+};
+
+export async function getProductBySlug(slug: string): Promise<ProductWithCarousel | null> {
   // Fetch product with template and carousel items
   const { data: product, error: productError } = await supabase
     .from('products')
@@ -25,7 +70,8 @@ export async function getProductBySlug(slug: string) {
         message_text,
         position,
         sort_order,
-        is_active
+        is_active,
+        product_id
       )
     `)
     .eq('slug', slug)
@@ -39,24 +85,39 @@ export async function getProductBySlug(slug: string) {
 
   if (!product) return null;
 
-  // Transform the data to match the expected Product interface
-  const transformedProduct = {
-    ...product,
-    template_name: product.templates?.name || '',
-    font_family: product.templates?.font_family || '',
-    palette: product.templates?.palette || {
-      overlayBg: 'rgba(0, 0, 0, 0.7)',
-      overlayInk: '#ffffff',
-      overlayMuted: '#cccccc',
-      accent: '#ff6b6b',
-      pageBg: '#ffffff',
-      breadcrumbBg: '#f8f9fa',
-      ctaSectionBg: '#f8f9fa',
-      processBg: '#ffffff'
-    },
-    carousel_items: (product.carousel_items || [])
-      .filter((item: any) => item.is_active)
-      .sort((a: any, b: any) => a.sort_order - b.sort_order)
+  // Type assertion for the product with relations
+  const productWithRelations = product as unknown as ProductWithRelations;
+  
+  // Get the default palette
+  const defaultPalette = {
+    overlayBg: 'rgba(0, 0, 0, 0.7)',
+    overlayInk: '#ffffff',
+    overlayMuted: '#cccccc',
+    accent: '#ff6b6b',
+    pageBg: '#ffffff',
+    breadcrumbBg: '#f8f9fa',
+    ctaSectionBg: '#f8f9fa',
+    processBg: '#ffffff'
+  };
+
+  // Get the template palette or use default
+  const templatePalette = productWithRelations.templates?.palette || {};
+  const mergedPalette = { ...defaultPalette, ...templatePalette };
+
+  // Filter and sort carousel items
+  const carouselItems = (productWithRelations.carousel_items || [])
+    .filter((item): item is CarouselItem => 
+      item.is_active === true && !!item.id
+    )
+    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+
+  // Transform the data to match the expected ProductWithCarousel interface
+  const transformedProduct: ProductWithCarousel = {
+    ...productWithRelations,
+    template_name: productWithRelations.templates?.name || '',
+    font_family: productWithRelations.templates?.font_family || '',
+    palette: mergedPalette,
+    carousel_items: carouselItems
   };
 
   return transformedProduct;

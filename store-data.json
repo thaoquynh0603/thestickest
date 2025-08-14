@@ -20,6 +20,35 @@
           "Age number stickers",
           "Birthday cake designs",
           "Balloon and confetti themes"
+        ],
+        "carousel_items": [
+          {
+            "id": "birthday-1",
+            "image_url": "https://placehold.co/800x600/ffe36b/111?text=Birthday+Design+1",
+            "message_h1": "Personalized Birthday Stickers",
+            "message_text": "Make every birthday special with custom name stickers",
+            "position": "top-left",
+            "sort_order": 1,
+            "is_active": true
+          },
+          {
+            "id": "birthday-2",
+            "image_url": "https://placehold.co/800x600/ff6b6b/111?text=Birthday+Design+2",
+            "message_h1": "Age-Specific Designs",
+            "message_text": "Perfect stickers for every age milestone",
+            "position": "bottom-right",
+            "sort_order": 2,
+            "is_active": true
+          },
+          {
+            "id": "birthday-3",
+            "image_url": "https://placehold.co/800x600/4ecdc4/111?text=Birthday+Design+3",
+            "message_h1": "Party Themes",
+            "message_text": "Match your party theme with custom stickers",
+            "position": "center-left",
+            "sort_order": 3,
+            "is_active": true
+          }
         ]
       },
       {
@@ -77,6 +106,35 @@
           "Wedding date stickers",
           "Table number decals",
           "Favor bag labels"
+        ],
+        "carousel_items": [
+          {
+            "id": "wedding-1",
+            "image_url": "https://placehold.co/800x600/ffffff/111?text=Wedding+Design+1",
+            "message_h1": "Elegant Wedding Stickers",
+            "message_text": "Add sophistication to your special day",
+            "position": "top-right",
+            "sort_order": 1,
+            "is_active": true
+          },
+          {
+            "id": "wedding-2",
+            "image_url": "https://placehold.co/800x600/f8f9fa/111?text=Wedding+Design+2",
+            "message_h1": "Monogram Designs",
+            "message_text": "Personalized couple monograms for your wedding",
+            "position": "bottom-left",
+            "sort_order": 2,
+            "is_active": true
+          },
+          {
+            "id": "wedding-3",
+            "image_url": "https://placehold.co/800x600/e9ecef/111?text=Wedding+Design+3",
+            "message_h1": "Wedding Favors",
+            "message_text": "Beautiful stickers for wedding favors and gifts",
+            "position": "center-right",
+            "sort_order": 3,
+            "is_active": true
+          }
         ]
       },
       {

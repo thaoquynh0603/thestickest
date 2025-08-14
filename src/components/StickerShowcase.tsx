@@ -5,6 +5,12 @@ import { useEffect, useRef, useState } from 'react';
 type PositionClass = 'top-left' | 'top-right' | 'center-left' | 'center-right' | 'bottom-left' | 'bottom-right';
 type UniqueOverlay = { title: string; bullets: string[]; position: PositionClass };
 
+// Type for raw data from JSON that might have string position
+type RawUniqueOverlay = { title: string; bullets: string[]; position: string };
+type RawCarouselItem = { image: string; caption: string; features: string[]; unique?: RawUniqueOverlay };
+type RawCarousel = { title: string; items: RawCarouselItem[] };
+
+// Validated types for component usage
 type CarouselItem = { image: string; caption: string; features: string[]; unique?: UniqueOverlay };
 type Carousel = { title: string; items: CarouselItem[] };
 type FeatureLabels = Record<string, string>;
@@ -12,13 +18,37 @@ type FeatureLabels = Record<string, string>;
 type Props = {
   title: string;
   subtitle: string;
-  carousels: Carousel[];
+  carousels: RawCarousel[];
   featureLabels: FeatureLabels;
   overlay?: { title: string; bullets: string[] };
 };
 
+// Validation function to ensure position is a valid PositionClass
+const validatePosition = (position: string): PositionClass => {
+  const validPositions: PositionClass[] = ['top-left', 'top-right', 'center-left', 'center-right', 'bottom-left', 'bottom-right'];
+  return validPositions.includes(position as PositionClass) ? position as PositionClass : 'bottom-left';
+};
+
+// Convert raw carousel data to validated carousel data
+const validateCarousels = (rawCarousels: RawCarousel[]): Carousel[] => {
+  return rawCarousels.map(carousel => ({
+    title: carousel.title,
+    items: carousel.items.map(item => ({
+      image: item.image,
+      caption: item.caption,
+      features: item.features,
+      unique: item.unique ? {
+        title: item.unique.title,
+        bullets: item.unique.bullets,
+        position: validatePosition(item.unique.position)
+      } : undefined
+    }))
+  }));
+};
+
 export default function StickerShowcase({ title, subtitle, carousels, featureLabels, overlay }: Props) {
-  const items = carousels.flatMap((c) => c.items);
+  const validatedCarousels = validateCarousels(carousels);
+  const items = validatedCarousels.flatMap((c) => c.items);
   const [index, setIndex] = useState(0);
 
   const containerRef = useRef<HTMLDivElement | null>(null);

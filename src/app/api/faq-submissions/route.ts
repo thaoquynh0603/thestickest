@@ -22,9 +22,12 @@ export async function GET(request: NextRequest) {
       .select('*', { count: 'exact' })
       .order('created_at', { ascending: false });
 
-    // Add status filter if provided
-    if (status && status !== 'all') {
-      query = query.eq('status', status);
+    // Add status filter if provided and valid
+    const validStatuses = ['PENDING', 'IN_PROGRESS', 'RESOLVED', 'CLOSED'] as const;
+    type StatusType = typeof validStatuses[number];
+    
+    if (status && status !== 'all' && validStatuses.includes(status as StatusType)) {
+      query = query.eq('status', status as StatusType);
     }
 
     // Add pagination

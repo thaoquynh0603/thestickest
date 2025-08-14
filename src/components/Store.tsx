@@ -18,7 +18,7 @@ interface StoreCategory {
   examples: string[];
 }
 
-interface StoreData {
+export interface StoreData {
   title: string;
   subtitle: string;
   categories: StoreCategory[];
