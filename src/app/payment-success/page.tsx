@@ -19,7 +19,7 @@ export default async function PaymentSuccessPage({ searchParams }: PaymentSucces
   
   // Get application details
   const { data: application, error } = await supabase
-    .from('design_requests_current_state')
+    .from('design_request_states')
     .select(`
       *,
       products (*)

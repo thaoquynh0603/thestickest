@@ -1,141 +1,99 @@
 import { createClient } from '@supabase/supabase-js';
-import type { Database } from '@/types/database';
-import type { ProductWithCarousel } from '@/types/database';
+import type { Database, ProductWithCarousel } from '@/types/database';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
 
 export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
-// Define the template type
-type Template = {
-  id: string;
-  name: string;
-  font_family: string | null;
-  palette: {
-    overlayBg?: string;
-    overlayInk?: string;
-    overlayMuted?: string;
-    accent?: string;
-    pageBg?: string;
-    breadcrumbBg?: string;
-    ctaSectionBg?: string;
-    processBg?: string;
-  };
-};
-
-// Define the carousel item type
-type CarouselItem = {
-  id: string;
-  image_url: string;
-  message_h1: string;
-  message_text: string | null;
-  position: string | null;
-  sort_order: number | null;
-  is_active: boolean | null;
-  product_id: string | null;
-};
-
-// Define the product type with relations
-type ProductWithRelations = {
-  id: string;
-  created_at: string | null;
-  updated_at: string | null;
-  title: string;
-  description: string | null;
-  slug: string;
-  is_active: boolean;
-  product_image_url: string | null;
-  template_id: string | null;
-  templates?: Template | null;
-  carousel_items?: CarouselItem[] | null;
-};
-
 export async function getProductBySlug(slug: string): Promise<ProductWithCarousel | null> {
-  // Fetch product with template and carousel items
-  const { data: product, error: productError } = await supabase
-    .from('products')
-    .select(`
-      *,
-      templates (
-        id,
-        name,
-        font_family,
-        palette
-      ),
-      carousel_items (
-        id,
-        image_url,
-        message_h1,
-        message_text,
-        position,
-        sort_order,
-        is_active,
-        product_id
-      )
-    `)
-    .eq('slug', slug)
-    .eq('is_active', true)
-    .single();
+  // Use database function that returns denormalized product data with template info
+  const { data: products, error: productError } = await supabase
+    .rpc('get_product_by_slug', { product_slug: slug });
 
   if (productError) {
     console.error('Error fetching product:', productError);
     return null;
   }
 
-  if (!product) return null;
+  if (!products || products.length === 0) return null;
 
-  // Type assertion for the product with relations
-  const productWithRelations = product as unknown as ProductWithRelations;
-  
-  // Get the default palette
-  const defaultPalette = {
-    overlayBg: 'rgba(0, 0, 0, 0.7)',
-    overlayInk: '#ffffff',
-    overlayMuted: '#cccccc',
-    accent: '#ff6b6b',
-    pageBg: '#ffffff',
-    breadcrumbBg: '#f8f9fa',
-    ctaSectionBg: '#f8f9fa',
-    processBg: '#ffffff'
-  };
+  const product = products[0];
 
-  // Get the template palette or use default
-  const templatePalette = productWithRelations.templates?.palette || {};
-  const mergedPalette = { ...defaultPalette, ...templatePalette };
+  // Parse carousel items and palette JSON
+  let parsedCarouselItems = [];
+  let parsedPalette;
 
-  // Filter and sort carousel items
-  const carouselItems = (productWithRelations.carousel_items || [])
-    .filter((item): item is CarouselItem => 
-      item.is_active === true && !!item.id
-    )
-    .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
+  try {
+    if (Array.isArray(product.carousel_items)) {
+      parsedCarouselItems = product.carousel_items;
+    } else if (typeof product.carousel_items === 'string') {
+      parsedCarouselItems = JSON.parse(product.carousel_items || '[]');
+    } else {
+      parsedCarouselItems = [];
+    }
+  } catch (error) {
+    console.warn('Failed to parse carousel_items JSON:', error);
+    parsedCarouselItems = [];
+  }
+
+  try {
+    parsedPalette = typeof product.palette === 'string' 
+      ? JSON.parse(product.palette) 
+      : product.palette || {};
+  } catch (error) {
+    console.warn('Failed to parse palette JSON:', error);
+    parsedPalette = {};
+  }
 
   // Transform the data to match the expected ProductWithCarousel interface
   const transformedProduct: ProductWithCarousel = {
-    ...productWithRelations,
-    template_name: productWithRelations.templates?.name || '',
-    font_family: productWithRelations.templates?.font_family || '',
-    palette: mergedPalette,
-    carousel_items: carouselItems
+    // Product fields
+    id: product.id,
+    slug: product.slug,
+    title: product.title,
+    subtitle: product.subtitle,
+    product_image_url: product.product_image_url,
+    description: product.description,
+    is_active: product.is_active,
+    created_at: product.created_at,
+    updated_at: product.updated_at,
+    price: (product as any).price || 2, // Use any to handle the dynamic return type
+    template_id: null, // Not returned by the function, but required by Product type
+    
+    // ProductWithCarousel additional fields
+    template_name: product.template_name || '',
+    font_family: product.font_family || '',
+    palette: {
+      overlayBg: 'rgba(0, 0, 0, 0.7)',
+      overlayInk: '#ffffff',
+      overlayMuted: '#cccccc',
+      accent: '#ff6b6b',
+      pageBg: '#ffffff',
+      breadcrumbBg: '#f8f9fa',
+      ctaSectionBg: '#f8f9fa',
+      processBg: '#ffffff',
+      ...parsedPalette // Override defaults with actual data
+    },
+    carousel_items: parsedCarouselItems
+      .filter((item: any) => item.is_active)
+      .sort((a: any, b: any) => a.sort_order - b.sort_order)
   };
 
   return transformedProduct;
 }
 
 export async function getAllProducts() {
-  const { data, error } = await supabase
-    .from('products')
-    .select('*')
-    .eq('is_active', true)
-    .order('created_at', { ascending: false });
+  // Use database function that returns denormalized product data
+  const { data: products, error } = await supabase
+    .rpc('get_product_details');
 
   if (error) {
     console.error('Error fetching products:', error);
     return [];
   }
 
-  return data || [];
+  return products || [];
 }
 
 // Transform Supabase product data to match the expected store format
@@ -148,14 +106,14 @@ export function transformProductsToStoreData(products: any[]) {
       title: product.title,
       description: product.description || product.subtitle,
       image: product.product_image_url,
-      features: product.features || [],
-      use_cases: product.use_cases || [],
-      materials: product.materials || [],
-      sizes: product.sizes || [],
-      starting_price: `$${product.starting_price}`,
-      min_quantity: product.min_quantity || 1,
-      design_time: product.design_time || "1-2 business days",
-      examples: product.examples || []
+      features: ["Custom designs", "High quality materials", "Fast turnaround"],
+      use_cases: ["Personal use", "Business branding", "Events and promotions"],
+      materials: ["Premium vinyl", "UV resistant ink"],
+      sizes: ["2\" x 2\"", "3\" x 3\"", "4\" x 4\"", "Custom sizes"],
+      starting_price: `$${product.price || 2}`,
+      min_quantity: 1,
+      design_time: "1-2 business days",
+      examples: ["Sample designs available"]
     })),
     features: {
       design: "Custom designs tailored to your needs",

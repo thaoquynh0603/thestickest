@@ -31,7 +31,7 @@ export default async function StorePage() {
   const storeData: StoreData = {
     title: "Custom Sticker Store",
     subtitle: "Find the perfect stickers for every occasion",
-    categories: products.map(product => ({
+    categories: products.map((product: any) => ({
       id: product.id || '',
       title: product.title || 'Untitled Product',
       description: product.description || 'No description available',

@@ -166,13 +166,20 @@ export default function DesignApplication({ product, application, questions: ini
       const currentQuestion = questions[questionIndex];
       if (currentQuestion) {
         const value = applicationData[currentQuestion.id];
+        
         // Email-specific validation regardless of is_required
         if (currentQuestion.question_type === 'email') {
           const email = typeof value === 'string' ? value.trim() : '';
           const emailRegex = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
           return !emailRegex.test(email);
         }
-        // For all questions (required or not), only enable Next when answered
+        
+        // For optional questions (is_required = false), allow skipping
+        if (!currentQuestion.is_required) {
+          return false; // Always allow next for optional questions
+        }
+        
+        // For required questions, only enable Next when answered
         return !value || (typeof value === 'string' && !value.trim());
       }
     }
@@ -215,6 +222,7 @@ export default function DesignApplication({ product, application, questions: ini
             return;
           }
         }
+        // For optional questions, no validation needed - user can skip
       }
       
       // Save progress before moving to next step
@@ -312,7 +320,7 @@ export default function DesignApplication({ product, application, questions: ini
     
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      nextStep();
+      nextStep(); // This will now allow skipping optional questions
     }
   };
 
@@ -331,7 +339,12 @@ export default function DesignApplication({ product, application, questions: ini
 
       return (
         <div className="step-container">
-          <h2 className="step-title">{question.question_text}</h2>
+          <h2 className="step-title">
+            {question.question_text}
+            {!question.is_required && (
+              <span className="optional-tag">(Optional)</span>
+            )}
+          </h2>
           {question.subtext ? (
             <p className="form-help" style={{ textAlign: 'center', marginTop: 0 }}>{question.subtext}</p>
           ) : null}
@@ -364,6 +377,9 @@ export default function DesignApplication({ product, application, questions: ini
             )}
             {question.question_type !== 'textarea' && question.question_type !== 'file_upload' && (
               <p className="form-help">💡 Press Enter to continue</p>
+            )}
+            {!question.is_required && (
+              <p className="form-help optional-hint">💡 This question is optional - you can skip it</p>
             )}
           </div>
         </div>
@@ -472,7 +488,11 @@ export default function DesignApplication({ product, application, questions: ini
               disabled={isNextButtonDisabled()}
               className="nav-button next"
             >
-              {isSaving ? 'Saving...' : 'Next'}
+              {isSaving ? 'Saving...' : (() => {
+                const questionIndex = currentStep - 1;
+                const currentQuestion = questions[questionIndex];
+                return currentQuestion && !currentQuestion.is_required ? 'Skip' : 'Next';
+              })()}
             </button>
           )}
           

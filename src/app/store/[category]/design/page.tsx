@@ -176,7 +176,6 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
     question_text: q.question_text,
     subtext: (q as any).subtext ?? null,
     question_type: q.question_type,
-    options: q.options as string[] | undefined,
     option_items: questionOptionItems[q.id],
     is_required: q.is_required || false,
     sort_order: q.sort_order || 0,

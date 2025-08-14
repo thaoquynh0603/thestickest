@@ -24,8 +24,11 @@ type Props = {
 };
 
 // Validation function to ensure position is a valid PositionClass
-const validatePosition = (position: string): PositionClass => {
+const validatePosition = (position: string | null | undefined): PositionClass => {
   const validPositions: PositionClass[] = ['top-left', 'top-right', 'center-left', 'center-right', 'bottom-left', 'bottom-right'];
+  if (!position || typeof position !== 'string') {
+    return 'bottom-left';
+  }
   return validPositions.includes(position as PositionClass) ? position as PositionClass : 'bottom-left';
 };
 

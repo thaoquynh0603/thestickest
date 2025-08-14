@@ -1,6 +1,14 @@
-export type Json = | string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
+export type Json =
+  | string
+  | number
+  | boolean
+  | null
+  | { [key: string]: Json | undefined }
+  | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "13.0.4"
   }
@@ -53,80 +61,6 @@ export type Database = {
           },
         ]
       }
-      templates: {
-        Row: {
-          id: string
-          name: string
-          font_family: string | null
-          palette: Json
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          name: string
-          font_family?: string | null
-          palette?: Json
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          name?: string
-          font_family?: string | null
-          palette?: Json
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      },
-      products: {
-        Row: {
-          id: string
-          created_at: string | null
-          updated_at: string | null
-          title: string
-          description: string | null
-          slug: string
-          is_active: boolean
-          product_image_url: string | null
-          template_id: string | null
-          // Add other product fields as needed
-        }
-        Insert: {
-          id?: string
-          created_at?: string | null
-          updated_at?: string | null
-          title: string
-          description?: string | null
-          slug: string
-          is_active?: boolean
-          product_image_url?: string | null
-          template_id?: string | null
-          // Add other product fields as needed
-        }
-        Update: {
-          id?: string
-          created_at?: string | null
-          updated_at?: string | null
-          title?: string
-          description?: string | null
-          slug?: string
-          is_active?: boolean
-          product_image_url?: string | null
-          template_id?: string | null
-          // Add other product fields as needed
-        }
-        Relationships: [
-          {
-            foreignKeyName: "products_template_id_fkey"
-            columns: ["template_id"]
-            isOneToOne: false
-            referencedRelation: "templates"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       custom_questions: {
         Row: {
           created_at: string
@@ -135,6 +69,7 @@ export type Database = {
           options: Json | null
           question_text: string
           question_type: string
+          sort_order: number
         }
         Insert: {
           created_at?: string
@@ -143,6 +78,7 @@ export type Database = {
           options?: Json | null
           question_text: string
           question_type?: string
+          sort_order?: number
         }
         Update: {
           created_at?: string
@@ -151,6 +87,7 @@ export type Database = {
           options?: Json | null
           question_text?: string
           question_type?: string
+          sort_order?: number
         }
         Relationships: [
           {
@@ -410,7 +347,7 @@ export type Database = {
         }
         Relationships: [
           {
-            foreignKeyName: "design_requests_product_id_fkey"
+            foreignKeyName: "design_applications_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
@@ -425,38 +362,68 @@ export type Database = {
           },
         ]
       }
-      design_styles: {
+      design_requests_backup: {
         Row: {
-          created_at: string
-          description: string | null
-          id: string
-          image_url: string | null
-          is_active: boolean
-          name: string
+          created_at: string | null
+          design_code: string | null
+          email: string | null
+          id: string | null
           product_id: string | null
-          sort_order: number
+          status: string | null
           updated_at: string | null
         }
         Insert: {
-          created_at?: string
-          description?: string | null
-          id?: string
-          image_url?: string | null
-          is_active?: boolean
-          name: string
+          created_at?: string | null
+          design_code?: string | null
+          email?: string | null
+          id?: string | null
           product_id?: string | null
-          sort_order?: number
+          status?: string | null
           updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
+          design_code?: string | null
+          email?: string | null
+          id?: string | null
+          product_id?: string | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      design_styles: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          product_id: string | null
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
           description?: string | null
           id?: string
           image_url?: string | null
-          is_active?: boolean
+          is_active?: boolean | null
+          name: string
+          product_id?: string | null
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
           name?: string
           product_id?: string | null
-          sort_order?: number
+          sort_order?: number | null
           updated_at?: string | null
         }
         Relationships: [
@@ -472,101 +439,86 @@ export type Database = {
       discount_codes: {
         Row: {
           code: string
-          created_at: string
-          created_by: string | null
+          created_at: string | null
+          current_uses: number | null
+          description: string | null
           discount_type: string
           discount_value: number
-          email_restrictions: string[] | null
-          expiration_date: string | null
           id: string
-          is_active: boolean
-          max_users: number | null
+          is_active: boolean | null
+          is_public: boolean | null
+          max_uses: number | null
           min_order_amount: number | null
-          usage_count: number
+          restricted_emails: string[] | null
+          updated_at: string | null
+          valid_from: string | null
+          valid_until: string | null
         }
         Insert: {
           code: string
-          created_at?: string
-          created_by?: string | null
-          discount_type?: string
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
+          discount_type: string
           discount_value: number
-          email_restrictions?: string[] | null
-          expiration_date?: string | null
           id?: string
-          is_active?: boolean
-          max_users?: number | null
+          is_active?: boolean | null
+          is_public?: boolean | null
+          max_uses?: number | null
           min_order_amount?: number | null
-          usage_count?: number
+          restricted_emails?: string[] | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Update: {
           code?: string
-          created_at?: string
-          created_by?: string | null
+          created_at?: string | null
+          current_uses?: number | null
+          description?: string | null
           discount_type?: string
           discount_value?: number
-          email_restrictions?: string[] | null
-          expiration_date?: string | null
           id?: string
-          is_active?: boolean
-          max_users?: number | null
+          is_active?: boolean | null
+          is_public?: boolean | null
+          max_uses?: number | null
           min_order_amount?: number | null
-          usage_count?: number
+          restricted_emails?: string[] | null
+          updated_at?: string | null
+          valid_from?: string | null
+          valid_until?: string | null
         }
         Relationships: []
       }
       faq_submissions: {
         Row: {
-          created_at: string
+          created_at: string | null
           email: string
           id: string
           message: string
           name: string
+          status: string | null
           subject: string
-          status: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
           updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           email: string
           id?: string
           message: string
           name: string
+          status?: string | null
           subject: string
-          status?: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
           updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           email?: string
           id?: string
           message?: string
           name?: string
+          status?: string | null
           subject?: string
-          status?: 'PENDING' | 'IN_PROGRESS' | 'RESOLVED' | 'CLOSED'
-          updated_at?: string | null
-        }
-        Relationships: []
-      },
-      admin_users: {
-        Row: {
-          id: string
-          email: string
-          is_active: boolean
-          created_at: string | null
-          updated_at: string | null
-        }
-        Insert: {
-          id?: string
-          email: string
-          is_active?: boolean
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Update: {
-          id?: string
-          email?: string
-          is_active?: boolean
-          created_at?: string | null
           updated_at?: string | null
         }
         Relationships: []
@@ -575,58 +527,70 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          is_active: boolean
           name: string
-          options: Json
-          updated_at: string | null
+          source_config: Json
+          source_type: string
+          updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
+          is_active?: boolean
           name: string
-          options: Json
-          updated_at?: string | null
+          source_config?: Json
+          source_type: string
+          updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
+          is_active?: boolean
           name?: string
-          options?: Json
-          updated_at?: string | null
+          source_config?: Json
+          source_type?: string
+          updated_at?: string
         }
         Relationships: []
       }
-      question_demo_items: {
+      payment_analytics: {
         Row: {
-          id: string
-          name: string
-          description: string | null
-          image_url: string | null
-          question_slug: string
-          is_active: boolean
-          sort_order: number | null
+          average_payment_time_seconds: number | null
           created_at: string | null
+          date: string
+          failed_payments: number | null
+          id: string
+          net_revenue: number | null
+          successful_payments: number | null
+          total_applications: number | null
+          total_fees: number | null
+          total_revenue: number | null
           updated_at: string | null
         }
         Insert: {
-          id?: string
-          name: string
-          description?: string | null
-          image_url?: string | null
-          question_slug: string
-          is_active?: boolean
-          sort_order?: number | null
+          average_payment_time_seconds?: number | null
           created_at?: string | null
+          date: string
+          failed_payments?: number | null
+          id?: string
+          net_revenue?: number | null
+          successful_payments?: number | null
+          total_applications?: number | null
+          total_fees?: number | null
+          total_revenue?: number | null
           updated_at?: string | null
         }
         Update: {
-          id?: string
-          name?: string
-          description?: string | null
-          image_url?: string | null
-          question_slug?: string
-          is_active?: boolean
-          sort_order?: number | null
+          average_payment_time_seconds?: number | null
           created_at?: string | null
+          date?: string
+          failed_payments?: number | null
+          id?: string
+          net_revenue?: number | null
+          successful_payments?: number | null
+          total_applications?: number | null
+          total_fees?: number | null
+          total_revenue?: number | null
           updated_at?: string | null
         }
         Relationships: []
@@ -635,159 +599,198 @@ export type Database = {
         Row: {
           amount: number | null
           application_id: string
-          created_at: string
+          created_at: string | null
           currency: string | null
           error_message: string | null
           event_data: Json | null
-          event_type: string | null
+          event_type: string
           id: string
           status: string | null
-          stripe_payment_intent_id: string
+          stripe_payment_intent_id: string | null
+          updated_at: string | null
         }
         Insert: {
           amount?: number | null
           application_id: string
-          created_at?: string
+          created_at?: string | null
           currency?: string | null
           error_message?: string | null
           event_data?: Json | null
-          event_type?: string | null
+          event_type: string
           id?: string
           status?: string | null
-          stripe_payment_intent_id: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string | null
         }
         Update: {
           amount?: number | null
           application_id?: string
-          created_at?: string
+          created_at?: string | null
           currency?: string | null
           error_message?: string | null
           event_data?: Json | null
-          event_type?: string | null
+          event_type?: string
           id?: string
           status?: string | null
-          stripe_payment_intent_id?: string
+          stripe_payment_intent_id?: string | null
+          updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "payment_events_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_events_application_id_fkey"
+            columns: ["application_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests_current_state"
+            referencedColumns: ["request_id"]
+          },
+        ]
       }
       products: {
         Row: {
           created_at: string | null
           description: string | null
-          design_time: string | null
-          examples: string[] | null
-          features: string[] | null
-          font_family: string | null
           id: string
           is_active: boolean | null
-          materials: string[] | null
-          min_quantity: number | null
-          palette: Json | null
+          price: number
           product_image_url: string | null
-          sizes: string[] | null
           slug: string
-          starting_price: number | null
           subtitle: string | null
-          template_name: string | null
-          title: string | null
+          template_id: string | null
+          title: string
           updated_at: string | null
-          use_cases: string[] | null
         }
         Insert: {
           created_at?: string | null
           description?: string | null
-          design_time?: string | null
-          examples?: string[] | null
-          features?: string[] | null
-          font_family?: string | null
           id?: string
           is_active?: boolean | null
-          materials?: string[] | null
-          min_quantity?: number | null
-          palette?: Json | null
+          price?: number
           product_image_url?: string | null
-          sizes?: string[] | null
           slug: string
-          starting_price?: number | null
           subtitle?: string | null
-          template_name?: string | null
-          title?: string | null
+          template_id?: string | null
+          title: string
           updated_at?: string | null
-          use_cases?: string[] | null
         }
         Update: {
           created_at?: string | null
           description?: string | null
-          design_time?: string | null
-          examples?: string[] | null
-          features?: string[] | null
-          font_family?: string | null
           id?: string
           is_active?: boolean | null
-          materials?: string[] | null
-          min_quantity?: number | null
-          palette?: Json | null
+          price?: number
           product_image_url?: string | null
-          sizes?: string[] | null
           slug?: string
-          starting_price?: number | null
           subtitle?: string | null
-          template_name?: string | null
-          title?: string | null
+          template_id?: string | null
+          title?: string
           updated_at?: string | null
-          use_cases?: string[] | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "products_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      question_demo_items: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean
+          name: string
+          question_slug: string
+          sort_order: number
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name: string
+          question_slug: string
+          sort_order?: number
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean
+          name?: string
+          question_slug?: string
+          sort_order?: number
         }
         Relationships: []
       }
       request_questions: {
         Row: {
-          created_at: string
+          created_at: string | null
           custom_template_id: number | null
           id: string
-          is_active: boolean
+          is_active: boolean | null
           is_customisable: boolean
-          is_required: boolean
+          is_required: boolean | null
           option_template_id: string | null
-          options: Json | null
-          product_id: string
+          product_id: string | null
           question_text: string
           question_type: string
-          sort_order: number
+          sort_order: number | null
+          subtext: string | null
           updated_at: string | null
         }
         Insert: {
-          created_at?: string
+          created_at?: string | null
           custom_template_id?: number | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           is_customisable?: boolean
-          is_required?: boolean
+          is_required?: boolean | null
           option_template_id?: string | null
-          options?: Json | null
-          product_id: string
+          product_id?: string | null
           question_text: string
-          question_type?: string
-          sort_order?: number
+          question_type: string
+          sort_order?: number | null
+          subtext?: string | null
           updated_at?: string | null
         }
         Update: {
-          created_at?: string
+          created_at?: string | null
           custom_template_id?: number | null
           id?: string
-          is_active?: boolean
+          is_active?: boolean | null
           is_customisable?: boolean
-          is_required?: boolean
+          is_required?: boolean | null
           option_template_id?: string | null
-          options?: Json | null
-          product_id?: string
+          product_id?: string | null
           question_text?: string
           question_type?: string
-          sort_order?: number
+          sort_order?: number | null
+          subtext?: string | null
           updated_at?: string | null
         }
         Relationships: [
           {
-            foreignKeyName: "request_questions_custom_template_id_fkey"
+            foreignKeyName: "application_questions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_custom_template"
             columns: ["custom_template_id"]
             isOneToOne: false
             referencedRelation: "custom_template"
@@ -800,19 +803,40 @@ export type Database = {
             referencedRelation: "option_templates"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "request_questions_product_id_fkey"
-            columns: ["product_id"]
-            isOneToOne: false
-            referencedRelation: "products"
-            referencedColumns: ["id"]
-          },
         ]
+      }
+      templates: {
+        Row: {
+          created_at: string | null
+          font_family: string | null
+          id: string
+          name: string
+          palette: Json
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          font_family?: string | null
+          id?: string
+          name: string
+          palette?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          font_family?: string | null
+          id?: string
+          name?: string
+          palette?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
       }
     }
     Views: {
       design_requests_current_state: {
         Row: {
+          created_at: string | null
           current_payment_status: string | null
           current_status: string | null
           design_code: string | null
@@ -827,6 +851,8 @@ export type Database = {
           payment_method: string | null
           payment_net_amount: number | null
           product_id: string | null
+          product_slug: string | null
+          product_title: string | null
           request_id: string | null
           stripe_payment_intent_id: string | null
           total_amount: number | null
@@ -846,22 +872,22 @@ export type Database = {
     Functions: {
       add_design_request_answer_history: {
         Args: {
-          p_request_id: string
-          p_question_id: string
-          p_answer_text?: string
           p_answer_file_url?: string
           p_answer_options?: Json
+          p_answer_text?: string
           p_created_by?: string
+          p_question_id: string
+          p_request_id: string
         }
         Returns: string
       }
       add_design_request_event: {
         Args: {
-          p_request_id: string
-          p_event_type: string
-          p_event_data?: Json
           p_created_by?: string
+          p_event_data?: Json
+          p_event_type: string
           p_metadata?: Json
+          p_request_id: string
         }
         Returns: string
       }
@@ -876,85 +902,85 @@ export type Database = {
       get_payment_analytics: {
         Args: Record<PropertyKey, never>
         Returns: {
-          date: string
-          total_applications: number
-          successful_payments: number
-          failed_payments: number
-          total_revenue: number
-          total_fees: number
-          net_revenue: number
           created_at: string
+          date: string
+          failed_payments: number
+          net_revenue: number
+          successful_payments: number
+          total_applications: number
+          total_fees: number
+          total_revenue: number
           updated_at: string
         }[]
       }
       get_product_by_slug: {
         Args: { product_slug: string }
         Returns: {
-          id: string
-          slug: string
-          title: string
-          subtitle: string
-          product_image_url: string
+          carousel_items: Json
+          created_at: string
           description: string
-          features: string[]
-          use_cases: string[]
-          materials: string[]
-          sizes: string[]
-          starting_price: number
-          min_quantity: number
           design_time: string
           examples: string[]
-          is_active: boolean
-          created_at: string
-          updated_at: string
-          template_name: string
+          features: string[]
           font_family: string
+          id: string
+          is_active: boolean
+          materials: string[]
+          min_quantity: number
           palette: Json
-          carousel_items: Json
+          product_image_url: string
+          sizes: string[]
+          slug: string
+          starting_price: number
+          subtitle: string
+          template_name: string
+          title: string
+          updated_at: string
+          use_cases: string[]
         }[]
       }
       get_product_details: {
         Args: Record<PropertyKey, never>
         Returns: {
-          id: string
-          slug: string
-          title: string
-          subtitle: string
-          product_image_url: string
+          carousel_items: Json
+          created_at: string
           description: string
-          features: string[]
-          use_cases: string[]
-          materials: string[]
-          sizes: string[]
-          starting_price: number
-          min_quantity: number
           design_time: string
           examples: string[]
-          is_active: boolean
-          created_at: string
-          updated_at: string
-          template_name: string
+          features: string[]
           font_family: string
+          id: string
+          is_active: boolean
+          materials: string[]
+          min_quantity: number
           palette: Json
-          carousel_items: Json
+          product_image_url: string
+          sizes: string[]
+          slug: string
+          starting_price: number
+          subtitle: string
+          template_name: string
+          title: string
+          updated_at: string
+          use_cases: string[]
         }[]
       }
       get_product_with_styles: {
         Args: { p_slug: string }
         Returns: {
-          product_id: string
-          slug: string
-          title: string
-          subtitle: string
-          product_image_url: string
+          created_at: string
           description: string
+          design_styles: Json
           examples: string[]
           is_active: boolean
           price: number
+          product_id: string
+          product_image_url: string
+          slug: string
+          subtitle: string
           template_id: string
-          created_at: string
+          title: string
           updated_at: string
-          design_styles: Json
         }[]
       }
       increment_discount_code_usage: {
@@ -963,10 +989,10 @@ export type Database = {
       }
       insert_faq_submission: {
         Args: {
-          p_name: string
           p_email: string
-          p_subject: string
           p_message: string
+          p_name: string
+          p_subject: string
         }
         Returns: Json
       }
@@ -976,27 +1002,27 @@ export type Database = {
       }
       log_payment_event: {
         Args: {
-          p_application_id: string
-          p_stripe_payment_intent_id: string
-          p_event_type: string
-          p_event_data: Json
           p_amount: number
+          p_application_id: string
           p_currency: string
-          p_status: string
           p_error_message: string
+          p_event_data: Json
+          p_event_type: string
+          p_status: string
+          p_stripe_payment_intent_id: string
         }
         Returns: undefined
       }
       secure_log_payment_event: {
         Args: {
-          p_application_id: string
-          p_stripe_payment_intent_id: string
-          p_event_type: string
-          p_event_data: Json
           p_amount: number
+          p_application_id: string
           p_currency: string
-          p_status: string
           p_error_message: string
+          p_event_data: Json
+          p_event_type: string
+          p_status: string
+          p_stripe_payment_intent_id: string
         }
         Returns: string
       }
@@ -1007,8 +1033,8 @@ export type Database = {
       update_application_payment_failure: {
         Args: {
           p_application_id: string
-          p_failure_reason: string
           p_failure_code: string
+          p_failure_reason: string
         }
         Returns: undefined
       }
@@ -1023,10 +1049,10 @@ export type Database = {
       validate_discount_code: {
         Args: { p_code: string; p_email?: string; p_order_amount?: number }
         Returns: {
-          is_valid: boolean
           discount_amount: number
           discount_type: string
           discount_value: number
+          is_valid: boolean
           message: string
         }[]
       }
@@ -1176,22 +1202,6 @@ export interface CarouselItem {
 
 export type ProductWithCarousel = Product & {
   carousel_items?: CarouselItem[];
-  templates?: {
-    name: string;
-    font_family: string | null;
-    palette: {
-      overlayBg?: string;
-      overlayInk?: string;
-      overlayMuted?: string;
-      accent?: string;
-      pageBg?: string;
-      breadcrumbBg?: string;
-      ctaSectionBg?: string;
-      processBg?: string;
-    };
-  } | null;
-  template_name?: string;
-  font_family?: string;
   palette?: {
     overlayBg?: string;
     overlayInk?: string;
@@ -1202,6 +1212,8 @@ export type ProductWithCarousel = Product & {
     ctaSectionBg?: string;
     processBg?: string;
   };
+  template_name?: string;
+  font_family?: string;
 };
 
 export const Constants = {

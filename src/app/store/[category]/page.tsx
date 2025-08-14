@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import CategoryDetail from '@/components/CategoryDetail';
-import { createClient, createBuildTimeClient } from '@/lib/supabase/server';
-import { ProductWithCarousel, CarouselItem } from '@/types/database';
+import { ProductWithCarousel } from '@/types/database';
+import { getProductBySlug } from '@/lib/supabase';
+import { createBuildTimeClient } from '@/lib/supabase/server';
 
 interface CategoryPageProps {
   params: {
@@ -13,64 +14,15 @@ interface CategoryPageProps {
 export const revalidate = 3600; // Revalidate every hour
 
 export default async function CategoryPage({ params }: CategoryPageProps) {
-  const supabase = createClient();
-  
-  // Fetch product with carousel items using server-side client
-  const { data: product, error: productError } = await supabase
-    .from('products')
-    .select(`
-      *,
-      carousel_items (
-        id,
-        image_url,
-        message_h1,
-        message_text,
-        position,
-        sort_order,
-        is_active
-      )
-    `)
-    .eq('slug', params.category)
-    .eq('is_active', true)
-    .single();
+  // Fetch product with template and carousel data
+  const product = await getProductBySlug(params.category);
 
-  if (productError || !product) {
+  if (!product) {
     notFound();
   }
 
-  const transformedProduct: ProductWithCarousel = {
-    ...product,
-    template_name: product.template_name || 'Default Template',
-    font_family: product.font_family || 'Inter, sans-serif',
-    palette: product.palette || {
-      overlayBg: 'rgba(0, 0, 0, 0.7)',
-      overlayInk: '#ffffff',
-      overlayMuted: '#cccccc',
-      accent: '#ff6b6b',
-      pageBg: '#ffffff',
-      breadcrumbBg: '#f8f9fa',
-      ctaSectionBg: '#f8f9fa',
-      processBg: '#ffffff'
-    },
-    carousel_items: (product.carousel_items || [])
-      .filter((item): item is CarouselItem => 
-        Boolean(item && 
-          item.id && 
-          item.image_url && 
-          item.message_h1 !== undefined &&
-          item.sort_order !== undefined
-        )
-      )
-      .map(item => ({
-        ...item,
-        product_id: item.product_id || product.id, // Ensure product_id is set
-        created_at: item.created_at || new Date().toISOString(),
-        updated_at: item.updated_at || new Date().toISOString()
-      }))
-      .sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0))
-  };
-
-  return <CategoryDetail product={transformedProduct} />;
+  // Product is already transformed by getProductBySlug with template data and carousel items
+  return <CategoryDetail product={product} />;
 }
 
 export async function generateStaticParams() {
@@ -86,7 +38,7 @@ export async function generateStaticParams() {
     return [];
   }
   
-  return products.map((product) => ({
+  return products.map((product: { slug: string }) => ({
     category: product.slug,
   }));
 }

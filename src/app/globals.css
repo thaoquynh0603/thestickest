@@ -2210,6 +2210,24 @@ img { display: block; max-width: 100%; height: auto; }
   text-align: center;
 }
 
+.optional-tag {
+  display: inline-block;
+  background: var(--purple-100);
+  color: var(--purple-600);
+  font-size: 16px;
+  font-weight: 600;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-left: 12px;
+  border: 2px solid var(--purple-200);
+}
+
+.optional-hint {
+  color: var(--purple-600) !important;
+  font-weight: 600;
+  font-style: italic;
+}
+
 .step-description {
   font-size: 18px;
   color: var(--muted-ink);

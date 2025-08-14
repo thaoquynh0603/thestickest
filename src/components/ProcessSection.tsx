@@ -1,7 +1,7 @@
-import { Product } from '@/types/database';
+import { ProductWithCarousel } from '@/types/database';
 
 interface ProcessSectionProps {
-  product: Product;
+  product: ProductWithCarousel;
 }
 
 export function ProcessSection({ product }: ProcessSectionProps) {
@@ -26,7 +26,7 @@ export function ProcessSection({ product }: ProcessSectionProps) {
             <div className="process-step-content">
               <h3 className="process-step-title">Design Creation</h3>
               <p className="process-step-description">
-                Our expert designers create your custom stickers within {product.design_time}. 
+                Our expert designers create your custom stickers within 1-2 business days. 
                 We focus on quality and attention to detail.
               </p>
             </div>

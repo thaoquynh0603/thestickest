@@ -83,7 +83,6 @@ export async function GET(request: NextRequest) {
       id: q.id,
       question_text: q.question_text,
       question_type: q.question_type,
-      options: q.options as string[] | undefined,
       option_items: questionOptionItems[q.id],
       is_required: q.is_required || false,
       is_customisable: q.is_customisable || false,

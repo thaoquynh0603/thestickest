@@ -12,12 +12,20 @@ interface ProductCarouselProps {
 }
 
 // Validation function to ensure position is a valid PositionClass
-const validatePosition = (position: string): PositionClass => {
+const validatePosition = (position: string | null | undefined): PositionClass => {
   const validPositions: PositionClass[] = ['top-left', 'top-right', 'center-left', 'center-right', 'bottom-left', 'bottom-right'];
+  if (!position || typeof position !== 'string') {
+    return 'bottom-left';
+  }
   return validPositions.includes(position as PositionClass) ? position as PositionClass : 'bottom-left';
 };
 
 export default function ProductCarousel({ carouselItems, productTitle, productSlug }: ProductCarouselProps) {
+  // Ensure we have valid carousel items
+  const validCarouselItems = carouselItems?.filter(item => 
+    item && item.id && item.image_url && item.message_h1
+  ) || [];
+  
   const [index, setIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -25,10 +33,10 @@ export default function ProductCarousel({ carouselItems, productTitle, productSl
 
   // Auto-slide every 3 seconds
   useEffect(() => {
-    if (carouselItems.length <= 1) return;
+    if (validCarouselItems.length <= 1) return;
     
     intervalRef.current = setInterval(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % carouselItems.length);
+      setIndex((prevIndex) => (prevIndex + 1) % validCarouselItems.length);
     }, 3000);
 
     return () => {
@@ -36,17 +44,17 @@ export default function ProductCarousel({ carouselItems, productTitle, productSl
         clearInterval(intervalRef.current);
       }
     };
-  }, [carouselItems.length]);
+  }, [validCarouselItems.length]);
 
   // Function to reset the auto-slide timer
   const resetAutoSlide = () => {
-    if (carouselItems.length <= 1) return;
+    if (validCarouselItems.length <= 1) return;
     
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
     intervalRef.current = setInterval(() => {
-      setIndex((prevIndex) => (prevIndex + 1) % carouselItems.length);
+      setIndex((prevIndex) => (prevIndex + 1) % validCarouselItems.length);
     }, 3000);
   };
 
@@ -101,15 +109,17 @@ export default function ProductCarousel({ carouselItems, productTitle, productSl
       overlayEl.style.setProperty('--overlay-y', `${Math.max(0, y)}px`);
     };
 
-    const pos: PositionClass = validatePosition(carouselItems[index]?.position || 'bottom-left');
+    // Ensure index is within bounds and get the current item
+    const currentItem = validCarouselItems[index] || validCarouselItems[0];
+    const pos: PositionClass = validatePosition(currentItem?.position || 'bottom-left');
     place(pos);
 
     const onResize = () => place(pos);
     window.addEventListener('resize', onResize);
     return () => window.removeEventListener('resize', onResize);
-  }, [index, carouselItems]);
+  }, [index, validCarouselItems]);
 
-  if (carouselItems.length === 0) {
+  if (validCarouselItems.length === 0) {
     return null;
   }
 
@@ -117,7 +127,7 @@ export default function ProductCarousel({ carouselItems, productTitle, productSl
     <section className="product-carousel-section">
       <div className="product-carousel-container">
         <ProductCarouselSlides 
-          items={carouselItems} 
+          items={validCarouselItems} 
           index={index} 
           onChange={setIndex} 
           containerRef={containerRef} 
@@ -127,10 +137,10 @@ export default function ProductCarousel({ carouselItems, productTitle, productSl
         <div ref={overlayRef} className="product-carousel-overlay floating">
           <div className="overlay-card">
             <h2 className="overlay-title">
-              {carouselItems[index]?.message_h1 || productTitle}
+              {validCarouselItems[index]?.message_h1 || productTitle}
             </h2>
             <p className="overlay-text">
-              {carouselItems[index]?.message_text || ''}
+              {validCarouselItems[index]?.message_text || ''}
             </p>
             <button 
               className="overlay-cta-button"
