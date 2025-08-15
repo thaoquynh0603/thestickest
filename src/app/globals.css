@@ -652,6 +652,35 @@ img { display: block; max-width: 100%; height: auto; }
 .showcase-overlay { position: absolute; z-index: 4; top: 0; left: 0; transition: transform 420ms ease, opacity 420ms ease; will-change: transform, opacity; }
 .showcase-overlay.floating { width: min(420px, 90vw); opacity: 0.98; transform: translate(var(--overlay-x, 0px), var(--overlay-y, 0px)); }
 
+/* Desktop styling for showcase overlay - larger size and text for better attention */
+@media (min-width: 1024px) {
+  .showcase-overlay.floating {
+    width: min(600px, 45vw);
+  }
+  
+  .showcase-overlay .card h2 {
+    font-size: 28px !important;
+    line-height: 1.2;
+    margin-bottom: 8px !important;
+  }
+  
+  .showcase-overlay .card p {
+    font-size: 18px !important;
+    line-height: 1.4;
+    margin-bottom: 12px !important;
+  }
+  
+  .showcase-overlay .card ul li {
+    font-size: 16px !important;
+    line-height: 1.5;
+    margin-bottom: 6px;
+  }
+  
+  .showcase-overlay .card {
+    padding: 24px !important;
+  }
+}
+
 /* FAQ Styles */
 .faq { padding: 60px 0; }
 .faq-header { text-align: center; margin-bottom: 48px; }

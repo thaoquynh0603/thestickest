@@ -77,46 +77,49 @@
       "subtitle": "See our amazing stickers in action.",
       "carousels": [
         {
-          "title": "Custom Sticker Collection 1",
+          "title": "Stick Your Style Anywhere",
+          "subtitle": "From laptops to bottles—make everything yours with custom stickers that stand out.",
           "items": [
             {
               "image": "/carousel-1.png",
               "caption": "Message 1 for carousel 1",
               "features": ["die-cut", "glossy", "fast-turnaround"],
               "unique": {
-                "title": "Message 2 for carousel 1",
-                "bullets": ["Message 3 for carousel 1"],
+                "title": "Stick Your Style Anywhere",
+                "bullets": ["From laptops to bottles—make everything yours with custom stickers that stand out."],
                 "position": "top-right"
               }
             }
           ]
         },
         {
-          "title": "Custom Sticker Collection 2",
+          "title": "Moments Made Memorable",
+          "subtitle": "Celebrate every occasion with stickers that bring joy to gifts, cards, and keepsakes.",
           "items": [
             {
               "image": "/carousel-2.png",
               "caption": "Message 1 for carousel 2",
               "features": ["matte", "clear"],
               "unique": {
-                "title": "Message 2 for carousel 2",
-                "bullets": ["Message 3 for carousel 2"],
-                "position": "bottom-left"
+                "title": "Moments Made Memorable",
+                "bullets": ["Celebrate every occasion with stickers that bring joy to gifts, cards, and keepsakes."],
+                "position": "top-left"
               }
             }
           ]
         },
         {
-          "title": "Custom Sticker Collection 3",
+          "title": "Your Design, Your Way",
+          "subtitle": "Create one-of-a-kind stickers that turn anything into something special.",
           "items": [
             {
               "image": "/carousel-3.png",
               "caption": "Message 1 for carousel 3",
               "features": ["removable", "laminated"],
               "unique": {
-                "title": "Message 2 for carousel 3",
-                "bullets": ["Message 3 for carousel 3"],
-                "position": "center-right"
+                "title": "Your Design, Your Way",
+                "bullets": ["Create one-of-a-kind stickers that turn anything into something special."],
+                "position": "center-left"
               }
             }
           ]
