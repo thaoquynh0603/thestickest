@@ -4,12 +4,12 @@ import { createClient } from '@/lib/supabase/server';
 export default async function StorePage() {
   const supabase = createClient();
   
-  // Fetch all active products
+  // Fetch all active products ordered by display_order (low to high)
   const { data: products, error } = await supabase
     .from('products')
     .select('*')
     .eq('is_active', true)
-    .order('created_at', { ascending: false });
+    .order('display_order', { ascending: true });
 
   if (error || !products) {
     console.error('Error fetching products:', error);

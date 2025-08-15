@@ -13,7 +13,7 @@ export default function Page() {
   const data = (landing as Landing).landing_page;
 
   return (
-    <>
+    <div className="landing-page-container">
       <Hero
         attention={data.attention}
         ctaText={data.interest.headline}
@@ -45,7 +45,7 @@ export default function Page() {
 
 
       <CTA desire={data.desire} buttonText={data.action.button_text} />
-    </>
+    </div>
   );
 }
 

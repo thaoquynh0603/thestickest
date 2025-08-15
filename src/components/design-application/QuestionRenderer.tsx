@@ -6,20 +6,24 @@ interface QuestionRendererProps {
   value: string | File | string[] | undefined;
   updateApplicationData: (field: string, value: string | File | string[]) => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>, questionId: string) => void;
+  onFileRemove?: (questionId: string, fileIndex: number) => void;
   onKeyPress: (event: React.KeyboardEvent) => void;
   onTextareaKeyPress: (event: React.KeyboardEvent) => void;
   applicationId?: string;
   getPreviewUrls?: (questionId: string) => string[] | undefined;
+  isUploading?: (questionId: string) => boolean;
 }
 
-function CustomQuestionFlow({ templateId, onUpdate, onFileUpload, onKeyPress, onTextareaKeyPress, applicationId, getPreviewUrls }: {
+function CustomQuestionFlow({ templateId, onUpdate, onFileUpload, onFileRemove, onKeyPress, onTextareaKeyPress, applicationId, getPreviewUrls, isUploading }: {
   templateId: string;
   onUpdate: (data: ApplicationData) => void;
   onFileUpload: (event: React.ChangeEvent<HTMLInputElement>, questionId: string) => void;
+  onFileRemove?: (questionId: string, fileIndex: number) => void;
   onKeyPress: (event: React.KeyboardEvent) => void;
   onTextareaKeyPress: (event: React.KeyboardEvent) => void;
   applicationId?: string;
   getPreviewUrls?: (questionId: string) => string[] | undefined;
+  isUploading?: (questionId: string) => boolean;
 }) {
   const [questions, setQuestions] = useState<ApplicationQuestion[]>([]);
   const [answers, setAnswers] = useState<ApplicationData>({ email: '' });
@@ -75,10 +79,12 @@ function CustomQuestionFlow({ templateId, onUpdate, onFileUpload, onKeyPress, on
             value={answers[q.id]}
             updateApplicationData={updateCustomApplicationData}
             onFileUpload={(e, qid) => handleFileUploadLocal(e, qid)}
+            onFileRemove={onFileRemove}
             onKeyPress={onKeyPress}
             onTextareaKeyPress={onTextareaKeyPress}
             applicationId={applicationId}
             getPreviewUrls={getPreviewUrls}
+            isUploading={isUploading}
           />
         </div>
       ))}
@@ -91,12 +97,19 @@ export function QuestionRenderer({
   value,
   updateApplicationData,
   onFileUpload,
+  onFileRemove,
   onKeyPress,
   onTextareaKeyPress,
   applicationId,
   getPreviewUrls,
+  isUploading,
 }: QuestionRendererProps) {
   const [isCustomizing, setCustomizing] = useState(false);
+  
+  // Safety check for required props
+  if (!question || !updateApplicationData || !onFileUpload) {
+    return <div>Error: Missing required props</div>;
+  }
   switch (question.question_type) {
     case 'email':
       return (
@@ -142,6 +155,31 @@ export function QuestionRenderer({
       const items = Array.isArray(question.option_items) ? question.option_items : [];
       // Prefer server-provided rich items if available, otherwise fall back to simple options.
 
+      // Helper function to check if an option is selected
+      const isOptionSelected = (optionId: string | undefined, optionName: string) => {
+        if (typeof value === 'string') {
+          return value === optionName || value === optionId;
+        }
+        return false;
+      };
+
+      // Helper function to check if custom is selected
+      const isCustomSelected = () => {
+        if (isCustomizing) return true;
+        if (typeof value === 'string') {
+          if (value === 'custom') return true;
+          if (value.trim() !== '') {
+            try {
+              const parsed = JSON.parse(value);
+              return parsed && typeof parsed === 'object';
+            } catch {
+              return false;
+            }
+          }
+        }
+        return false;
+      };
+
       if (items.length > 0) {
         return (
           <>
@@ -150,8 +188,13 @@ export function QuestionRenderer({
                 <button
                   key={(it.id ?? it.name) + it.name}
                   type="button"
-                  className={`choice-card ${typeof value === 'string' && (value === it.name || (!!it.id && value === it.id)) ? 'selected' : ''}`}
-                  onClick={() => { setCustomizing(false); updateApplicationData(question.id, (it.id as string | undefined) ?? it.name); }}
+                  className={`choice-card ${isOptionSelected(it.id, it.name) ? 'selected' : ''}`}
+                  onClick={() => { 
+                    setCustomizing(false); 
+                    if (typeof updateApplicationData === 'function') {
+                      updateApplicationData(question.id, (it.id as string | undefined) ?? it.name); 
+                    }
+                  }}
                 >
                   {it.image_url ? (
                     <img src={it.image_url} alt={it.name} className="choice-card-image" />
@@ -163,8 +206,13 @@ export function QuestionRenderer({
               {question.is_customisable && (
                 <button
                   type="button"
-                  className={`choice-card ${isCustomizing ? 'selected' : ''}`}
-                  onClick={() => { setCustomizing(true); updateApplicationData(question.id, ''); }}
+                  className={`choice-card ${isCustomSelected() ? 'selected' : ''}`}
+                  onClick={() => { 
+                    setCustomizing(true); 
+                    if (typeof updateApplicationData === 'function') {
+                      updateApplicationData(question.id, 'custom'); 
+                    }
+                  }}
                 >
                   <div className="choice-card-name">I have a different idea!</div>
                 </button>
@@ -176,10 +224,12 @@ export function QuestionRenderer({
                   templateId={question.custom_template_id}
                   onUpdate={(customData) => updateApplicationData(question.id, JSON.stringify(customData))}
                   onFileUpload={(e, qid) => onFileUpload(e, qid)}
+                  onFileRemove={onFileRemove}
                   onKeyPress={onKeyPress}
                   onTextareaKeyPress={onTextareaKeyPress}
                   applicationId={applicationId}
                   getPreviewUrls={getPreviewUrls}
+                  isUploading={isUploading}
                 />
               </div>
             ) : null}
@@ -192,7 +242,12 @@ export function QuestionRenderer({
             <DemoChoiceGrid
               slug={question.id}
               selectedValue={typeof value === 'string' ? value : undefined}
-              onSelect={(val) => { setCustomizing(false); updateApplicationData(question.id, val); }}
+              onSelect={(val) => { 
+              setCustomizing(false); 
+              if (typeof updateApplicationData === 'function') {
+                updateApplicationData(question.id, val); 
+              }
+            }}
             />
             {question.is_customisable && isCustomizing && question.custom_template_id ? (
               <div className="mt-4">
@@ -200,10 +255,12 @@ export function QuestionRenderer({
                   templateId={question.custom_template_id}
                   onUpdate={(customData) => updateApplicationData(question.id, JSON.stringify(customData))}
                   onFileUpload={(e, qid) => onFileUpload(e, qid)}
+                  onFileRemove={onFileRemove}
                   onKeyPress={onKeyPress}
                   onTextareaKeyPress={onTextareaKeyPress}
                   applicationId={applicationId}
                   getPreviewUrls={getPreviewUrls}
+                  isUploading={isUploading}
                 />
               </div>
             ) : null}
@@ -227,28 +284,45 @@ export function QuestionRenderer({
                 templateId={question.custom_template_id}
                   onUpdate={(customData) => updateApplicationData(question.id, JSON.stringify(customData))}
                 onFileUpload={(e, qid) => onFileUpload(e, qid)}
+                onFileRemove={onFileRemove}
                 onKeyPress={onKeyPress}
                 onTextareaKeyPress={onTextareaKeyPress}
                 applicationId={applicationId}
                 getPreviewUrls={getPreviewUrls}
+                isUploading={isUploading}
               />
             </div>
           ) : null}
           {typeof value === 'string' && value.toLowerCase().includes('custom') && (
             <div className="upload-control mt-4">
-              <label className="upload-box" aria-label="Upload custom shape">
+              <label className={`upload-box ${isUploading?.(`${question.id}CustomUpload`) ? 'uploading' : ''}`} aria-label="Upload custom shape">
                 <input
                   type="file"
                   accept="image/*"
                   hidden
+                  disabled={isUploading?.(`${question.id}CustomUpload`) || false}
                   onChange={(e) => onFileUpload(e, `${question.id}CustomUpload`)}
                 />
                 <div className="upload-box-inner">
-                  <div className="upload-icon" aria-hidden>📎</div>
-                  <div className="upload-texts">
-                    <span className="upload-cta">Add Custom Shape Image</span>
-                    <span className="upload-sub">JPG, PNG, GIF up to 5MB</span>
-                  </div>
+                  {isUploading?.(`${question.id}CustomUpload`) ? (
+                    <>
+                      <div className="upload-icon uploading" aria-hidden>
+                        <div className="spinner"></div>
+                      </div>
+                      <div className="upload-texts">
+                        <span className="upload-cta">Uploading...</span>
+                        <span className="upload-sub">Please wait</span>
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="upload-icon" aria-hidden>📎</div>
+                      <div className="upload-texts">
+                        <span className="upload-cta">Add Custom Shape Image</span>
+                        <span className="upload-sub">JPG, PNG, GIF up to 5MB</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </label>
               {(() => {
@@ -256,7 +330,20 @@ export function QuestionRenderer({
                 return previews.length > 0 ? (
                   <div className="preview-grid">
                     {previews.map((src, idx) => (
-                      <img key={idx} src={src} alt={`Preview ${idx + 1}`} className="preview-image" />
+                      <div key={idx} className="preview-container">
+                        <img src={src} alt={`Preview ${idx + 1}`} className="preview-image" />
+                        {onFileRemove && (
+                          <button
+                            type="button"
+                            className="remove-file-btn"
+                            onClick={() => onFileRemove(`${question.id}CustomUpload`, idx)}
+                            aria-label={`Remove file ${idx + 1}`}
+                            title="Remove file"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 ) : null;
@@ -269,30 +356,59 @@ export function QuestionRenderer({
 
     case 'file_upload': {
       const previews = getPreviewUrls?.(question.id) || [];
+      const uploading = isUploading?.(question.id) || false;
       return (
         <>
           <div className="upload-control">
-            <label className="upload-box" aria-label="Upload image">
+            <label className={`upload-box ${uploading ? 'uploading' : ''}`} aria-label="Upload image">
               <input
                 type="file"
                 onChange={(e) => onFileUpload(e, question.id)}
                 accept="image/*"
                 required={question.is_required}
+                disabled={uploading}
                 hidden
               />
               <div className="upload-box-inner">
-                <div className="upload-icon" aria-hidden>📷</div>
-                <div className="upload-texts">
-                  <span className="upload-cta">Choose File</span>
-                  <span className="upload-sub">JPG, PNG, GIF up to 5MB</span>
-                </div>
+                {uploading ? (
+                  <>
+                    <div className="upload-icon uploading" aria-hidden>
+                      <div className="spinner"></div>
+                    </div>
+                    <div className="upload-texts">
+                      <span className="upload-cta">Uploading...</span>
+                      <span className="upload-sub">Please wait</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="upload-icon" aria-hidden>📷</div>
+                    <div className="upload-texts">
+                      <span className="upload-cta">Choose File</span>
+                      <span className="upload-sub">JPG, PNG, GIF up to 5MB</span>
+                    </div>
+                  </>
+                )}
               </div>
             </label>
           </div>
           {previews.length > 0 ? (
             <div className="preview-grid">
               {previews.map((src, idx) => (
-                <img key={idx} src={src} alt={`Preview ${idx + 1}`} className="preview-image" />
+                <div key={idx} className="preview-container">
+                  <img src={src} alt={`Preview ${idx + 1}`} className="preview-image" />
+                  {onFileRemove && (
+                    <button
+                      type="button"
+                      className="remove-file-btn"
+                      onClick={() => onFileRemove(question.id, idx)}
+                      aria-label={`Remove file ${idx + 1}`}
+                      title="Remove file"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
               ))}
             </div>
           ) : null}
@@ -422,7 +538,14 @@ function OptionGrid({ slug, options, selectedValue, onSelect, question, setCusto
       {question.is_customisable && (
         <button
           type="button"
-          className={`choice-card ${isCustomizing ? 'selected' : ''}`}
+          className={`choice-card ${isCustomizing || (typeof selectedValue === 'string' && selectedValue.trim() !== '' && (() => {
+            try {
+              const parsed = JSON.parse(selectedValue);
+              return parsed && typeof parsed === 'object';
+            } catch {
+              return false;
+            }
+          })()) ? 'selected' : ''}`}
           onClick={() => { onSelect(''); setCustomizing(true); }}
         >
           <div className="choice-card-name">I have a different idea!</div>

@@ -21,8 +21,8 @@ export default function WorryFree({ title, description, items, closing }: Props)
   };
 
   return (
-    <section id="worry-free" className="container" aria-labelledby="worry-free-heading">
-      <div className="card worry-free-container" style={{ padding: 48, position: 'relative', overflow: 'hidden' }}>
+    <section id="worry-free" className="container" aria-labelledby="worry-free-heading" style={{ display: 'flex', justifyContent: 'center', width: '100%' }}>
+      <div className="card worry-free-container" style={{ padding: 48, position: 'relative', overflow: 'hidden', maxWidth: '1200px', width: '100%' }}>
         <div className="worry-bg-pattern" aria-hidden></div>
         <h2 id="worry-free-heading" style={{ marginTop: 0, marginBottom: 16, fontWeight: 900, fontSize: 'clamp(28px, 4vw, 42px)' }}>
           {title}

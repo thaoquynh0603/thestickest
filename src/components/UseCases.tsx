@@ -23,7 +23,7 @@ export default function UseCases({ useCases, additionalBenefits }: Props) {
           <img
             src="/customer_love.png"
             alt="Placeholder for rating/social proof"
-            style={{ height: '400px', width: 'auto' }}
+            style={{ height: '100%', width: 'auto' }}
           />
         </div>
       </div>

@@ -28,9 +28,11 @@ export default function DesignApplication({ product, application, questions: ini
     email: application.email || ''
   });
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
+  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
   const [selectedStyleId, setSelectedStyleId] = useState<string>('');
   const [designCode, setDesignCode] = useState<string>(application.design_code);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
+  const [customFlowCompletion, setCustomFlowCompletion] = useState<Record<string, boolean>>({});
   const styleQuestionIndex = useMemo(() => {
     return questions.findIndex((q) => q.option_items && Array.isArray(q.option_items) && q.option_items.length > 0 && q.question_text.toLowerCase().includes('style'));
   }, [questions]);
@@ -107,6 +109,9 @@ export default function DesignApplication({ product, application, questions: ini
       return;
     }
 
+    // Set uploading state for this question
+    setUploadingFiles(prev => ({ ...prev, [questionId]: true }));
+
     try {
       // Create a local preview immediately for better UX
       const localUrl = URL.createObjectURL(file);
@@ -148,17 +153,101 @@ export default function DesignApplication({ product, application, questions: ini
       console.error('Error uploading file:', error);
       alert(`Failed to upload ${file.name}`);
     } finally {
+      // Clear uploading state
+      setUploadingFiles(prev => ({ ...prev, [questionId]: false }));
       // Clear the input
       event.target.value = '';
     }
   };
 
+  const handleFileRemove = (questionId: string, fileIndex: number) => {
+    // Remove the file from previews
+    setPreviews(prev => {
+      const currentPreviews = prev[questionId] || [];
+      const newPreviews = currentPreviews.filter((_, index) => index !== fileIndex);
+      return {
+        ...prev,
+        [questionId]: newPreviews
+      };
+    });
+
+    // Remove the file from application data
+    const currentValue = applicationData[questionId];
+    if (Array.isArray(currentValue)) {
+      // For array values (like style references), remove the specific index
+      const newValue = (currentValue as string[]).filter((_, index) => index !== fileIndex);
+      updateApplicationData(questionId, newValue);
+    } else {
+      // For single file values, clear the entire value
+      updateApplicationData(questionId, '');
+    }
+  };
+
+  // Helper function to check if custom flow is complete (synchronous version)
+  const isCustomFlowCompleteSync = (customData: any, templateId: string): boolean => {
+    // For now, we'll use a simple check based on the custom data structure
+    // This can be enhanced later with cached custom question requirements
+    
+    if (!customData || typeof customData !== 'object') return false;
+    
+    // Check if any meaningful data exists (not just 'uploaded' placeholders)
+    const hasMeaningfulData = Object.values(customData).some(v => {
+      if (typeof v === 'string') {
+        return v.trim() !== '' && v.toLowerCase() !== 'uploaded';
+      }
+      return v !== null && v !== undefined;
+    });
+    
+    // If no meaningful data, check if there are uploaded files for this custom flow
+    if (!hasMeaningfulData) {
+      const hasUploadedFiles = Object.keys(previews).some(key => 
+        key.startsWith(templateId) && previews[key].length > 0
+      );
+      return hasUploadedFiles;
+    }
+    
+    return true;
+  };
+
   const isNextButtonDisabled = () => {
     if (isSaving) return true;
     
+    // Safety check for questions array
+    if (!questions || questions.length === 0) return true;
+    
     // If a question is recognized as style selection, require a selection
     if (styleQuestionIndex >= 0 && currentStep === styleQuestionIndex + 1) {
-      return !selectedStyleId;
+      const currentQuestion = questions[styleQuestionIndex];
+      if (currentQuestion) {
+        const value = applicationData[currentQuestion.id];
+        
+        // Check if user has selected a predefined style
+        if (selectedStyleId) {
+          return false; // Allow next if a predefined style is selected
+        }
+        
+        // Check if user has chosen custom option and provided data
+        if (typeof value === 'string' && value.trim() !== '') {
+          // Check if it's the custom option
+          if (value === 'custom') {
+            return false; // Allow next if custom option is selected
+          }
+          // Check if it's custom flow data (JSON)
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed && typeof parsed === 'object') {
+              // Check if custom flow is complete (including required file uploads)
+              const isComplete = isCustomFlowCompleteSync(parsed, currentQuestion.custom_template_id || '');
+              return !isComplete; // Disable next if custom flow is not complete
+            }
+          } catch {
+            // Not JSON, treat as regular string
+            return !value.trim(); // Allow next if non-empty string
+          }
+        }
+        
+        return true; // Disable next if no selection made
+      }
     }
     
     const questionIndex = currentStep - 1;
@@ -174,13 +263,38 @@ export default function DesignApplication({ product, application, questions: ini
           return !emailRegex.test(email);
         }
         
+        // For file upload questions, always allow skipping (they're typically optional)
+        if (currentQuestion.question_type === 'file_upload') {
+          return false; // Always allow next for file upload questions
+        }
+        
         // For optional questions (is_required = false), allow skipping
         if (!currentQuestion.is_required) {
           return false; // Always allow next for optional questions
         }
         
         // For required questions, only enable Next when answered
-        return !value || (typeof value === 'string' && !value.trim());
+        if (!value) return true;
+        
+        // Handle custom flow data (JSON strings)
+        if (typeof value === 'string') {
+          // Check if it's a JSON string from custom flow
+          try {
+            const parsed = JSON.parse(value);
+            if (parsed && typeof parsed === 'object') {
+              // For custom flow data, check if it's complete
+              const isComplete = isCustomFlowCompleteSync(parsed, currentQuestion.custom_template_id || '');
+              return !isComplete;
+            }
+          } catch {
+            // Not JSON, treat as regular string
+          }
+          
+          // Regular string validation
+          return !value.trim();
+        }
+        
+        return false;
       }
     }
     
@@ -301,13 +415,21 @@ export default function DesignApplication({ product, application, questions: ini
         return;
       }
       
+      // Safety check for functions
+      if (typeof isNextButtonDisabled !== 'function') return;
+      
+      // Check if the next button should be disabled before proceeding
+      if (currentStep < questions.length && isNextButtonDisabled()) {
+        return; // Don't proceed if the button would be disabled
+      }
+      
       // Move to next step or submit based on current step
       if (currentStep < questions.length) {
-        nextStep();
+        if (typeof nextStep === 'function') nextStep();
       } else if (currentStep === questions.length) {
-        goToReview();
+        if (typeof goToReview === 'function') goToReview();
       } else if (currentStep === questions.length + 1) {
-        handleSubmit();
+        if (typeof handleSubmit === 'function') handleSubmit();
       }
     }
   };
@@ -320,7 +442,16 @@ export default function DesignApplication({ product, application, questions: ini
     
     if (event.key === 'Enter' && !event.shiftKey) {
       event.preventDefault();
-      nextStep(); // This will now allow skipping optional questions
+      
+      // Safety check for functions
+      if (typeof isNextButtonDisabled !== 'function' || typeof nextStep !== 'function') return;
+      
+      // Check if the next button should be disabled before proceeding
+      if (isNextButtonDisabled()) {
+        return; // Don't proceed if the button would be disabled
+      }
+      
+      nextStep();
     }
   };
 
@@ -351,7 +482,7 @@ export default function DesignApplication({ product, application, questions: ini
           <div className="form-group">
               <QuestionRenderer
               question={question}
-              value={question.question_text.toLowerCase().includes('style') ? selectedStyleId : applicationData[question.id]}
+              value={applicationData[question.id]}
               updateApplicationData={(field, val) => {
                 if (question.question_text.toLowerCase().includes('style') && typeof val === 'string') {
                   const uuidLike = /^[0-9a-fA-F-]{36}$/;
@@ -364,10 +495,12 @@ export default function DesignApplication({ product, application, questions: ini
                 }
               }}
               onFileUpload={handleFileUpload}
+              onFileRemove={handleFileRemove}
               onKeyPress={handleKeyPress}
               onTextareaKeyPress={handleTextareaKeyPress}
               applicationId={application.id}
               getPreviewUrls={(qid) => previews[qid]}
+              isUploading={(qid: string) => uploadingFiles[qid] || false}
             />
             {question.question_type === 'file_upload' && (
               <p className="form-help">Accepted formats: JPG, PNG, GIF (Max 5MB)</p>
@@ -464,6 +597,14 @@ export default function DesignApplication({ product, application, questions: ini
 
         {/* Step Content */}
         <div className="step-content">
+          {Object.values(uploadingFiles).some(uploading => uploading) && (
+            <div className="upload-overlay">
+              <div className="upload-loading">
+                <div className="upload-spinner"></div>
+                <p>Uploading file...</p>
+              </div>
+            </div>
+          )}
           {renderStep()}
         </div>
 
@@ -480,6 +621,9 @@ export default function DesignApplication({ product, application, questions: ini
           <span className="step-indicator">
             Step {currentStep} of {totalSteps}
             {isSaving && <span className="saving-indicator"> • Saving...</span>}
+            {Object.values(uploadingFiles).some(uploading => uploading) && (
+              <span className="uploading-indicator"> • Uploading...</span>
+            )}
           </span>
           
           {currentStep < questions.length && (
@@ -488,11 +632,7 @@ export default function DesignApplication({ product, application, questions: ini
               disabled={isNextButtonDisabled()}
               className="nav-button next"
             >
-              {isSaving ? 'Saving...' : (() => {
-                const questionIndex = currentStep - 1;
-                const currentQuestion = questions[questionIndex];
-                return currentQuestion && !currentQuestion.is_required ? 'Skip' : 'Next';
-              })()}
+              {isSaving ? 'Saving...' : 'Next'}
             </button>
           )}
           
