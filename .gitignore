@@ -9,3 +9,4 @@ node_modules
 .github/
 
 .vscode/
+.env.local
