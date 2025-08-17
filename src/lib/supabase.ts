@@ -60,6 +60,9 @@ export async function getProductBySlug(slug: string): Promise<ProductWithCarouse
     updated_at: product.updated_at,
     price: (product as any).price || 2, // Use any to handle the dynamic return type
     template_id: null, // Not returned by the function, but required by Product type
+  // Fields required by Product type but not always returned by the RPC
+  display_order: (product as any).display_order ?? null,
+  name: (product as any).name ?? product.title ?? null,
     
     // ProductWithCarousel additional fields
     template_name: product.template_name || '',

@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { ApplicationQuestion, ApplicationData } from './types';
 import DemoChoiceGrid from './DemoChoiceGrid';
 import OptionGrid from './OptionGrid';
+import AIInspiration from './AIInspiration';
 
 interface QuestionRendererProps {
   question: ApplicationQuestion;
@@ -176,13 +177,64 @@ export function QuestionRenderer(props: QuestionRendererProps) {
     setCustomizing(false);
   }, [value]);
 
+  const handleAIInspiration = (text: string) => {
+    updateApplicationData(question.id, text);
+  };
+
   switch (question.question_type) {
     case 'email':
       return <input type="email" value={typeof value === 'string' ? value : ''} onChange={(e) => updateApplicationData(question.id, e.target.value)} className="form-input" placeholder="your.email@example.com" required={question.is_required} onKeyPress={onKeyPress} />;
     case 'text':
       return <input type="text" value={typeof value === 'string' ? value : ''} onChange={(e) => updateApplicationData(question.id, e.target.value)} className="form-input" placeholder="Enter your answer..." required={question.is_required} onKeyPress={onKeyPress} />;
-    case 'textarea':
-      return <textarea value={typeof value === 'string' ? value : ''} onChange={(e) => updateApplicationData(question.id, e.target.value)} className="form-textarea" placeholder="Enter your answer..." rows={4} required={question.is_required} onKeyPress={onTextareaKeyPress} />;
+    case 'textarea': {
+      // Show AI inspiration for textarea fields that support it
+      console.log('🔍 Question AI generation check:', {
+        questionId: question.id,
+        questionText: question.question_text,
+        is_ai_generated: question.is_ai_generated,
+        applicationId: applicationId
+      });
+      
+      if (question.is_ai_generated) {
+        console.log('✅ Rendering AI Inspiration component for question:', question.id);
+        return (
+          <div className="textarea-with-ai">
+            <div className="textarea-container" style={{ position: 'relative' }}>
+              <textarea 
+                value={typeof value === 'string' ? value : ''} 
+                onChange={(e) => updateApplicationData(question.id, e.target.value)} 
+                className={`form-textarea ${typeof value === 'string' && value.trim() ? 'ai-content-loaded' : ''}`}
+                placeholder={typeof value === 'string' && value.trim() ? "AI-generated content loaded! Click ✨ for new inspiration or edit below..." : "Enter your answer..."}
+                rows={4} 
+                required={question.is_required} 
+                onKeyPress={onTextareaKeyPress} 
+              />
+              <div className="ai-inspiration-inline">
+                <AIInspiration
+                  questionId={question.id}
+                  requestId={applicationId}
+                  onInspirationGenerated={handleAIInspiration}
+                  isInline={true}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      }
+
+      // Regular textarea without AI
+      return (
+        <textarea 
+          value={typeof value === 'string' ? value : ''} 
+          onChange={(e) => updateApplicationData(question.id, e.target.value)} 
+          className="form-textarea" 
+          placeholder="Enter your answer..." 
+          rows={4} 
+          required={question.is_required} 
+          onKeyPress={onTextareaKeyPress} 
+        />
+      );
+    }
     case 'multiple_choice': {
       const options = Array.isArray(question.options) ? question.options : [];
       const items = Array.isArray(question.option_items) ? question.option_items : [];
@@ -343,7 +395,42 @@ export function QuestionRenderer(props: QuestionRendererProps) {
     default:
       return <input type="text" value={typeof value === 'string' ? value : ''} onChange={(e) => updateApplicationData(question.id, e.target.value)} className="form-input" placeholder="Enter your answer..." required={question.is_required} onKeyPress={onKeyPress} />;
   }
+
+  return (
+    <>
+      {/* Component JSX */}
+      <style jsx>{`
+        .ai-content-loaded {
+          border-color: #8b5cf6 !important;
+          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+          background-color: #faf5ff !important;
+          transition: all 0.3s ease;
+        }
+
+        .ai-content-loaded:focus {
+          border-color: #7c3aed !important;
+          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2) !important;
+          background-color: #ffffff !important;
+        }
+
+        .textarea-with-ai {
+          position: relative;
+        }
+
+        .textarea-container {
+          position: relative;
+        }
+
+        .ai-inspiration-inline {
+          position: absolute;
+          top: 0.5rem;
+          right: 0.5rem;
+          z-index: 10;
+        }
+      `}</style>
+    </>
+  );
 }
-  // end of QuestionRenderer
+// end of QuestionRenderer
 
 

@@ -1,6 +1,4 @@
 node_modules
-.env.local
-
 #remove next folder
 .next/
 
@@ -9,6 +7,7 @@ node_modules
 .github/
 
 .vscode/
-.env.local
+
 *.local
 .env.local
+.env

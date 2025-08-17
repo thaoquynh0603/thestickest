@@ -3,7 +3,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const envContent = `NEXT_PUBLIC_SUPABASE_URL=https://hyrjcmrvrxtepvlpmgxs.supabase.co\nNEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cmpjbXJ2cnh0ZXB2bHBtZ3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ3OTQxODMsImV4cCI6MjA3MDM3MDE4M30.u5dJxis6wQIXqeoX0-Yh12iaPRc8qPCgQm9E0ekZDe0`;
+const envContent = `NEXT_PUBLIC_SUPABASE_URL=https://hyrjcmrvrxtepvlpmgxs.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imh5cmpjbXJ2cnh0ZXB2bHBtZ3hzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ3OTQxODMsImV4cCI6MjA3MDM3MDE4M30.u5dJxis6wQIXqeoX0-Yh12iaPRc8qPCgQm9E0ekZDe0
+GEMINI_API_KEY=your_gemini_api_key_here
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here`;
 
 const envPath = path.join(__dirname, '.env.local');
 
@@ -11,6 +14,7 @@ try {
   fs.writeFileSync(envPath, envContent);
   console.log('✅ Environment variables configured successfully!');
   console.log('📁 Created .env.local file with Supabase credentials');
+  console.log('🔑 Please add your GEMINI_API_KEY and SUPABASE_SERVICE_ROLE_KEY to .env.local');
   console.log('\n🚀 You can now run your development server:');
   console.log('   npm run dev');
 } catch (error) {

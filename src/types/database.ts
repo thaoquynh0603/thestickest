@@ -66,6 +66,7 @@ export type Database = {
           created_at: string
           custom_template_id: number
           id: number
+          is_required: boolean
           options: Json | null
           question_text: string
           question_type: string
@@ -75,6 +76,7 @@ export type Database = {
           created_at?: string
           custom_template_id: number
           id?: never
+          is_required?: boolean
           options?: Json | null
           question_text: string
           question_type?: string
@@ -84,6 +86,7 @@ export type Database = {
           created_at?: string
           custom_template_id?: number
           id?: never
+          is_required?: boolean
           options?: Json | null
           question_text?: string
           question_type?: string
@@ -117,8 +120,42 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_submissions: {
+        Row: {
+          id: string
+          name: string | null
+          email: string | null
+          subject: string | null
+          message: string | null
+          status: string | null
+          created_at: string
+          updated_at: string | null
+        }
+        Insert: {
+          id?: string
+          name?: string | null
+          email?: string | null
+          subject?: string | null
+          message?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Update: {
+          id?: string
+          name?: string | null
+          email?: string | null
+          subject?: string | null
+          message?: string | null
+          status?: string | null
+          created_at?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       design_request_answers_history: {
         Row: {
+          ai_generated_id: string | null
           answer_file_url: string | null
           answer_options: Json | null
           answer_text: string | null
@@ -131,6 +168,7 @@ export type Database = {
           version: number
         }
         Insert: {
+          ai_generated_id?: string | null
           answer_file_url?: string | null
           answer_options?: Json | null
           answer_text?: string | null
@@ -143,6 +181,7 @@ export type Database = {
           version?: number
         }
         Update: {
+          ai_generated_id?: string | null
           answer_file_url?: string | null
           answer_options?: Json | null
           answer_text?: string | null
@@ -490,38 +529,96 @@ export type Database = {
         }
         Relationships: []
       }
-      faq_submissions: {
+      gemini_runs: {
         Row: {
           created_at: string | null
-          email: string
+          created_by: string | null
           id: string
-          message: string
-          name: string
-          status: string | null
-          subject: string
-          updated_at: string | null
+          metadata: Json | null
+          prompt: string
+          question_id: string | null
+          request_id: string | null
+          response: Json
         }
         Insert: {
           created_at?: string | null
-          email: string
+          created_by?: string | null
           id?: string
-          message: string
-          name: string
-          status?: string | null
-          subject: string
-          updated_at?: string | null
+          metadata?: Json | null
+          prompt: string
+          question_id?: string | null
+          request_id?: string | null
+          response: Json
         }
         Update: {
           created_at?: string | null
-          email?: string
+          created_by?: string | null
           id?: string
-          message?: string
-          name?: string
-          status?: string | null
-          subject?: string
-          updated_at?: string | null
+          metadata?: Json | null
+          prompt?: string
+          question_id?: string | null
+          request_id?: string | null
+          response?: Json
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "gemini_runs_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "request_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gemini_runs_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "gemini_runs_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests_current_state"
+            referencedColumns: ["request_id"]
+          },
+        ]
+      }
+      how_did_you_hear_answers: {
+        Row: {
+          created_at: string
+          id: string
+          request_id: string
+          selected_options: string[]
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          request_id: string
+          selected_options: string[]
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          request_id?: string
+          selected_options?: string[]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "how_did_you_hear_answers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "how_did_you_hear_answers_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests_current_state"
+            referencedColumns: ["request_id"]
+          },
+        ]
       }
       option_templates: {
         Row: {
@@ -581,7 +678,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
-          average_payment_time_seconds?: number | null
+          average_payment_time_seconds?: string | null
           created_at?: string | null
           date?: string
           failed_payments?: number | null
@@ -656,8 +753,10 @@ export type Database = {
         Row: {
           created_at: string | null
           description: string | null
+          display_order: number | null
           id: string
           is_active: boolean | null
+          name: string | null
           price: number
           product_image_url: string | null
           slug: string
@@ -669,8 +768,10 @@ export type Database = {
         Insert: {
           created_at?: string | null
           description?: string | null
+          display_order?: number | null
           id?: string
           is_active?: boolean | null
+          name?: string | null
           price?: number
           product_image_url?: string | null
           slug: string
@@ -682,8 +783,10 @@ export type Database = {
         Update: {
           created_at?: string | null
           description?: string | null
+          display_order?: number | null
           id?: string
           is_active?: boolean | null
+          name?: string | null
           price?: number
           product_image_url?: string | null
           slug?: string
@@ -737,10 +840,14 @@ export type Database = {
       }
       request_questions: {
         Row: {
+          ai_generated_prompt: string | null
+          ai_prompt_placeholder: Json | null
+          ai_structured_output: string | null
           created_at: string | null
           custom_template_id: number | null
           id: string
           is_active: boolean | null
+          is_ai_generated: boolean
           is_customisable: boolean
           is_required: boolean | null
           option_template_id: string | null
@@ -752,10 +859,14 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          ai_generated_prompt?: string | null
+          ai_prompt_placeholder?: Json | null
+          ai_structured_output?: string | null
           created_at?: string | null
           custom_template_id?: number | null
           id?: string
           is_active?: boolean | null
+          is_ai_generated?: boolean
           is_customisable?: boolean
           is_required?: boolean | null
           option_template_id?: string | null
@@ -767,10 +878,14 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          ai_generated_prompt?: string | null
+          ai_prompt_placeholder?: Json | null
+          ai_structured_output?: string | null
           created_at?: string | null
           custom_template_id?: number | null
           id?: string
           is_active?: boolean | null
+          is_ai_generated?: boolean
           is_customisable?: boolean
           is_required?: boolean | null
           option_template_id?: string | null
@@ -883,8 +998,8 @@ export type Database = {
       }
       add_design_request_event: {
         Args: {
-          p_created_by?: string
-          p_event_data?: Json
+          p_created_by: string
+          p_event_data: Json
           p_event_type: string
           p_metadata?: Json
           p_request_id: string
@@ -919,50 +1034,35 @@ export type Database = {
           carousel_items: Json
           created_at: string
           description: string
-          design_time: string
-          examples: string[]
-          features: string[]
           font_family: string
           id: string
           is_active: boolean
-          materials: string[]
-          min_quantity: number
           palette: Json
+          price: number
           product_image_url: string
-          sizes: string[]
           slug: string
-          starting_price: number
           subtitle: string
           template_name: string
           title: string
           updated_at: string
-          use_cases: string[]
         }[]
       }
       get_product_details: {
         Args: Record<PropertyKey, never>
         Returns: {
           carousel_items: Json
-          created_at: string
           description: string
-          design_time: string
-          examples: string[]
-          features: string[]
           font_family: string
           id: string
           is_active: boolean
-          materials: string[]
-          min_quantity: number
           palette: Json
+          price: number
           product_image_url: string
-          sizes: string[]
           slug: string
-          starting_price: number
           subtitle: string
           template_name: string
           title: string
           updated_at: string
-          use_cases: string[]
         }[]
       }
       get_product_with_styles: {

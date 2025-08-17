@@ -178,6 +178,7 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
   // Create the initial event for this request
   await supabase.rpc('add_design_request_event', {
     p_request_id: designApplication.id,
+    p_created_by: 'system',
     p_event_type: 'REQUEST_CREATED',
     p_event_data: {
       email: null,
@@ -199,7 +200,12 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
     is_required: q.is_required || false,
     sort_order: q.sort_order || 0,
     is_customisable: Boolean(q.is_customisable),
-    custom_template_id: q.custom_template_id ? String(q.custom_template_id) : null
+    custom_template_id: q.custom_template_id ? String(q.custom_template_id) : null,
+    // AI-related fields
+    is_ai_generated: Boolean(q.is_ai_generated),
+    ai_generated_prompt: q.ai_generated_prompt || null,
+    ai_structured_output: q.ai_structured_output || null,
+    ai_prompt_placeholder: q.ai_prompt_placeholder || null
   }));
 
   // Safety check to ensure we have valid data before rendering

@@ -106,12 +106,18 @@ export async function GET(request: NextRequest) {
       id: q.id,
       question_text: q.question_text,
       question_type: q.question_type,
+      subtext: q.subtext,
       option_items: questionOptionItems[q.id],
       option_source_type: questionOptionSourceType[q.id] || null,
       is_required: q.is_required || false,
       is_customisable: q.is_customisable || false,
       custom_template_id: q.custom_template_id || null,
       sort_order: q.sort_order || 0,
+      // AI-related fields
+      is_ai_generated: q.is_ai_generated || false,
+      ai_generated_prompt: q.ai_generated_prompt || null,
+      ai_structured_output: q.ai_structured_output || null,
+      ai_prompt_placeholder: q.ai_prompt_placeholder || null,
     }));
 
     return NextResponse.json(transformed);
