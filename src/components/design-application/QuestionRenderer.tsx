@@ -30,6 +30,11 @@ function CustomQuestionFlow({ templateId, parentQuestionId, onUpdate, onFileUplo
   isUploading?: (questionId: string) => boolean;
   initialAnswers?: ApplicationData;
 }) {
+  // Safety check to prevent hydration issues
+  if (!templateId) {
+    return <div>Loading...</div>;
+  }
+  
   const [questions, setQuestions] = useState<ApplicationQuestion[]>([]);
   // start with empty answers or seed from initialAnswers when available
   // cast to ApplicationData so we don't need to include unrelated defaults like email
@@ -97,30 +102,39 @@ function CustomQuestionFlow({ templateId, parentQuestionId, onUpdate, onFileUplo
 
   return (
     <div className="custom-questions-container">
-      {questions.map((q) => (
-        <div key={q.id} className="form-group">
-          <label className="form-label">{q.question_text}</label>
-          {q.subtext && <p className="form-subtext">{q.subtext}</p>}
-          <QuestionRenderer
-            question={q}
-            value={(answers[q.question_text as keyof typeof answers] as string) ?? (answers[q.id as unknown as keyof typeof answers] as string)}
-            updateApplicationData={(f, v) => updateCustomApplicationData(f, v)}
-            onFileUpload={(ev, id) => handleFileUploadLocal(ev, id)}
-            onFileRemove={onFileRemove}
-            onKeyPress={onKeyPress}
-            onTextareaKeyPress={onTextareaKeyPress}
-            applicationId={applicationId}
-            getPreviewUrls={(sub) => getPreviewUrls?.(`${templateId}:${sub}`)}
-            isUploading={(sub) => !!isUploading?.(`${templateId}:${sub}`)}
-          />
-        </div>
-      ))}
+      {questions.map((q) => {
+        if (!q) return null; // Safety check
+        return (
+          <div key={q.id} className="form-group">
+            <label className="form-label">{q.question_text}</label>
+            {q.subtext && <p className="form-subtext">{q.subtext}</p>}
+            <QuestionRenderer
+              question={q}
+              value={(answers[q.question_text as keyof typeof answers] as string) ?? (answers[q.id as unknown as keyof typeof answers] as string)}
+              updateApplicationData={(f, v) => updateCustomApplicationData(f, v)}
+              onFileUpload={(ev, id) => handleFileUploadLocal(ev, id)}
+              onFileRemove={onFileRemove}
+              onKeyPress={onKeyPress}
+              onTextareaKeyPress={onTextareaKeyPress}
+              applicationId={applicationId}
+              getPreviewUrls={(sub) => getPreviewUrls?.(`${templateId}:${sub}`)}
+              isUploading={(sub) => !!isUploading?.(`${templateId}:${sub}`)}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
 
 export function QuestionRenderer(props: QuestionRendererProps) {
   const { question, value, updateApplicationData, onFileUpload, onFileRemove, onKeyPress, onTextareaKeyPress, applicationId, getPreviewUrls, isUploading } = props;
+  
+  // Safety check to prevent hydration issues
+  if (!question) {
+    return null;
+  }
+  
   const [isCustomizing, setCustomizing] = useState(() => {
     if (typeof value === 'string') {
       if (value === 'custom') return true;
@@ -136,7 +150,10 @@ export function QuestionRenderer(props: QuestionRendererProps) {
   const PAGE_SIZE = 6;
   const [choicePageIdx, setChoicePageIdx] = useState(0);
 
-  useEffect(() => { setChoicePageIdx(0); }, [question.option_items && question.option_items.length]);
+  // Reset paging when the available option sets change (either option_items or options)
+  useEffect(() => { 
+    setChoicePageIdx(0); 
+  }, [question.option_items?.length ?? 0, question.options?.length ?? 0]);
 
   // Keep isCustomizing in sync when parent value changes (e.g., navigating back with saved custom answers)
   useEffect(() => {
@@ -159,8 +176,6 @@ export function QuestionRenderer(props: QuestionRendererProps) {
     setCustomizing(false);
   }, [value]);
 
-  if (!question) return null;
-
   switch (question.question_type) {
     case 'email':
       return <input type="email" value={typeof value === 'string' ? value : ''} onChange={(e) => updateApplicationData(question.id, e.target.value)} className="form-input" placeholder="your.email@example.com" required={question.is_required} onKeyPress={onKeyPress} />;
@@ -171,12 +186,13 @@ export function QuestionRenderer(props: QuestionRendererProps) {
     case 'multiple_choice': {
       const options = Array.isArray(question.options) ? question.options : [];
       const items = Array.isArray(question.option_items) ? question.option_items : [];
-      if (items.length > 0) {
+      if (items && items.length > 0) {
         const pageItems = items.slice(choicePageIdx * PAGE_SIZE, choicePageIdx * PAGE_SIZE + PAGE_SIZE);
         return (
           <>
             <div className="choice-grid three-cols mb-4">
               {pageItems.map((it) => {
+                if (!it) return null; // Safety check
                 const itemVal = (it.id as string | undefined) ?? it.name;
                 const isSelected = typeof value === 'string' && value === itemVal;
                 return (
@@ -185,7 +201,7 @@ export function QuestionRenderer(props: QuestionRendererProps) {
                     type="button"
                     className={`choice-card ${isSelected ? 'selected' : ''}`}
                     onClick={() => updateApplicationData(question.id, itemVal)}
-                    aria-pressed={isSelected}
+                    aria-pressed={isSelected ? "true" : "false"}
                   >
                     {it.image_url ? <img src={it.image_url} alt={it.name} className="choice-card-image" /> : null}
                     <div className="choice-card-name">{it.name}</div>
@@ -202,13 +218,21 @@ export function QuestionRenderer(props: QuestionRendererProps) {
                   })()}`}
                   onClick={() => { setCustomizing(true); updateApplicationData(question.id, 'custom'); }}
                   aria-pressed={(() => {
-                    if (typeof value !== 'string') return false;
-                    if (value === 'custom') return true;
-                    try { const p = JSON.parse(value); return !!(p && typeof p === 'object'); } catch { return false; }
+                    if (typeof value !== 'string') return "false";
+                    if (value === 'custom') return "true";
+                    try { const p = JSON.parse(value); return p && typeof p === 'object' ? "true" : "false"; } catch { return "false"; }
                   })()}
                 >I have a different idea!</button>
               )}
             </div>
+            {/* simple pagination for option_items */}
+              {items && items.length > PAGE_SIZE && (
+                <div className="pagination-controls mt-3">
+                  <button type="button" className="btn-page" onClick={() => setChoicePageIdx(Math.max(0, choicePageIdx - 1))} disabled={choicePageIdx === 0}>Prev</button>
+                  <span className="page-indicator">{choicePageIdx + 1} / {Math.ceil(items.length / PAGE_SIZE)}</span>
+                  <button type="button" className="btn-page" onClick={() => setChoicePageIdx(Math.min(Math.ceil(items.length / PAGE_SIZE) - 1, choicePageIdx + 1))} disabled={choicePageIdx >= Math.ceil(items.length / PAGE_SIZE) - 1}>Next</button>
+                </div>
+              )}
     {question.is_customisable && isCustomizing && question.custom_template_id && (
               <div className="mt-4">
                 <CustomQuestionFlow
@@ -232,26 +256,61 @@ export function QuestionRenderer(props: QuestionRendererProps) {
           </>
         );
       }
-      if (options.length === 0) {
+      if (options && options.length === 0) {
         return <DemoChoiceGrid slug={question.id} selectedValue={typeof value === 'string' ? value : undefined} onSelect={(val) => updateApplicationData(question.id, val)} />;
       }
-      return <OptionGrid slug={question.id} options={options} selectedValue={typeof value === 'string' ? value : undefined} onSelect={(val) => updateApplicationData(question.id, val)} question={question} setCustomizing={setCustomizing} isCustomizing={isCustomizing} />;
+      return <OptionGrid slug={question.id} options={options || []} selectedValue={typeof value === 'string' ? value : undefined} onSelect={(val) => updateApplicationData(question.id, val)} question={question} setCustomizing={setCustomizing} isCustomizing={isCustomizing} />;
     }
     case 'checkboxes': {
       const options = Array.isArray(question.options) ? question.options : [];
+      // Ensure selected is always an array, even if value is null/undefined
       const selected = Array.isArray(value) ? value as string[] : [];
-      const toggle = (v: string) => { const next = selected.includes(v) ? selected.filter(s => s !== v) : [...selected, v]; updateApplicationData(question.id, next); };
+      const toggle = (v: string) => { 
+        if (!Array.isArray(selected)) return; // Safety check
+        const next = selected.includes(v) ? selected.filter(s => s !== v) : [...selected, v]; 
+        updateApplicationData(question.id, next); 
+      };
+      // paginate checkbox options when there are many
+      const pageOptions = (options || []).slice(choicePageIdx * PAGE_SIZE, choicePageIdx * PAGE_SIZE + PAGE_SIZE);
       return (
-        <div className="checkbox-group">
-          {options.map((opt) => (
-            <label key={opt} className="checkbox-option"><input type="checkbox" checked={selected.includes(opt)} onChange={() => toggle(opt)} />{opt}</label>
-          ))}
-        </div>
+        <>
+          <div className="checkbox-group">
+            {pageOptions.map((opt) => {
+              if (!opt) return null; // Safety check
+              return (
+                <label key={opt} className="checkbox-option">
+                  <input type="checkbox" checked={Array.isArray(selected) && selected.includes(opt)} onChange={() => toggle(opt)} />
+                  {opt}
+                </label>
+              );
+            })}
+          </div>
+          {options && options.length > PAGE_SIZE && (
+            <div className="pagination-controls mt-3">
+              <button type="button" className="btn-page" onClick={() => setChoicePageIdx(Math.max(0, choicePageIdx - 1))} disabled={choicePageIdx === 0}>Prev</button>
+              <span className="page-indicator">{choicePageIdx + 1} / {Math.ceil(options.length / PAGE_SIZE)}</span>
+              <button type="button" className="btn-page" onClick={() => setChoicePageIdx(Math.min(Math.ceil(options.length / PAGE_SIZE) - 1, choicePageIdx + 1))} disabled={choicePageIdx >= Math.ceil(options.length / PAGE_SIZE) - 1}>Next</button>
+            </div>
+          )}
+        </>
       );
     }
     case 'file_upload': {
       const previews = getPreviewUrls?.(question.id) || [];
       const uploading = isUploading?.(question.id) || false;
+      
+      // Handle soft delete for photos
+      const handleRemovePhoto = (index: number) => {
+        if (onFileRemove && typeof value === 'string') {
+          // For single file uploads, clear the value
+          if (typeof value === 'string') {
+            updateApplicationData(question.id, '');
+          }
+          // Call the onFileRemove callback for cleanup
+          onFileRemove(question.id, index);
+        }
+      };
+
       return (
         <>
           <div className="upload-control">
@@ -261,7 +320,22 @@ export function QuestionRenderer(props: QuestionRendererProps) {
             </label>
           </div>
           {previews.length > 0 && (
-            <div className="preview-grid">{previews.map((p, i) => <img key={i} src={p} alt={`preview-${i}`} className="preview-image" />)}</div>
+            <div className="preview-grid">
+              {previews.map((p, i) => (
+                <div key={i} className="preview-container">
+                  <img src={p} alt={`preview-${i}`} className="preview-image" />
+                  <button
+                    type="button"
+                    className="remove-photo-btn"
+                    onClick={() => handleRemovePhoto(i)}
+                    title="Remove photo"
+                    aria-label={`Remove photo ${i + 1}`}
+                  >
+                    ×
+                  </button>
+                </div>
+              ))}
+            </div>
           )}
         </>
       );

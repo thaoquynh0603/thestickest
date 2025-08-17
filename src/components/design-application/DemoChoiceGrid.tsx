@@ -8,6 +8,11 @@ interface DemoChoiceGridProps {
 }
 
 export default function DemoChoiceGrid({ slug, selectedValue, onSelect }: DemoChoiceGridProps) {
+  // Safety check to prevent hydration issues
+  if (!slug) {
+    return <div>Loading...</div>;
+  }
+  
   const [items, setItems] = useState<Array<{ id: string; name: string; image_url?: string | null; description?: string | null }>>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -46,20 +51,22 @@ export default function DemoChoiceGrid({ slug, selectedValue, onSelect }: DemoCh
   return (
     <>
       <div className="choice-grid three-cols">
-        {pageItems.map((it) => (
-          <button
-            key={it.id + it.name}
-            type="button"
-            className={`choice-card ${selectedValue === it.id ? 'selected' : ''}`}
-            onClick={() => onSelect(it.id)}
-          >
-            {it.image_url ? (
-              <img src={it.image_url} alt={it.name} className="choice-card-image" />
-            ) : null}
-            <div className="choice-card-name">{it.name}</div>
-            {it.description ? <div className="choice-card-desc">{it.description}</div> : null}
-          </button>
-        ))}
+        {pageItems.map((item) => {
+          if (!item) return null; // Safety check
+          return (
+            <button
+              key={item.id || item.name}
+              type="button"
+              className={`choice-card ${selectedValue === (item.id || item.name) ? 'selected' : ''}`}
+              onClick={() => onSelect(item.id || item.name)}
+              aria-pressed={selectedValue === (item.id || item.name) ? "true" : "false"}
+            >
+              {item.image_url ? <img src={item.image_url} alt={item.name} className="choice-card-image" /> : null}
+              <div className="choice-card-name">{item.name}</div>
+              {item.description && <div className="choice-card-description">{item.description}</div>}
+            </button>
+          );
+        })}
       </div>
       {totalPages > 1 && (
         <div className="choice-pagination flex items-center justify-center gap-4 mt-4">

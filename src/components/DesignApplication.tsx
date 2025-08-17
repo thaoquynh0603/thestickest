@@ -12,6 +12,11 @@ import { SuccessStep } from './design-application/SuccessStep';
 import { ErrorStep } from './design-application/ErrorStep';
 import { WelcomeStep } from './design-application/WelcomeStep';
 import type { ApplicationQuestion, ApplicationData } from './design-application/types';
+import { supabase } from '@/lib/supabase/client';
+
+// Configurable max upload size for client-side checks (in MB)
+const CLIENT_MAX_UPLOAD_SIZE_MB = parseInt(process.env.NEXT_PUBLIC_MAX_UPLOAD_SIZE_MB || '50', 10);
+const CLIENT_MAX_UPLOAD_SIZE = CLIENT_MAX_UPLOAD_SIZE_MB * 1024 * 1024;
 
 interface DesignApplicationProps {
   product: Product;
@@ -28,20 +33,27 @@ export default function DesignApplication({ product, application, questions: ini
   const [questions, setQuestions] = useState<ApplicationQuestion[]>(initialQuestions);
   const storageKey = `design_application:${application.id}`;
 
-  const [applicationData, setApplicationData] = useState<ApplicationData>(() => {
+  // Safety check to prevent hydration issues
+  if (!application || !product) {
+    return <div>Loading...</div>;
+  }
+
+  const [applicationData, setApplicationData] = useState<ApplicationData>({ email: application.email || '' } as ApplicationData);
+  
+  // Initialize application data from localStorage after component mounts
+  useEffect(() => {
     try {
       if (typeof window !== 'undefined') {
         const raw = localStorage.getItem(storageKey);
         if (raw) {
           const parsed = JSON.parse(raw || '{}');
-          return { ...(parsed as ApplicationData), email: application.email || '' } as ApplicationData;
+          setApplicationData({ ...(parsed as ApplicationData), email: application.email || '' } as ApplicationData);
         }
       }
     } catch (e) {
       // ignore parse errors
     }
-    return { email: application.email || '' } as ApplicationData;
-  });
+  }, [storageKey, application.email]);
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
   // selections are stored in applicationData[question.id] (prefer stable IDs when provided)
@@ -60,12 +72,12 @@ export default function DesignApplication({ product, application, questions: ini
     setApplicationData((prev) => {
       const next: ApplicationData = { ...(prev ?? {}), email: application.email || '' } as ApplicationData;
       questions.forEach((question: ApplicationQuestion) => {
-        if (!Object.prototype.hasOwnProperty.call(next, question.id)) {
+        if (!(question.id in next)) {
           next[question.id] = '';
         }
       });
       // Initialize the global howDidYouHear as an empty array if not present
-      if (!Object.prototype.hasOwnProperty.call(next, 'howDidYouHear')) {
+      if (!('howDidYouHear' in next)) {
         (next as any).howDidYouHear = [];
       }
       return next;
@@ -161,9 +173,9 @@ export default function DesignApplication({ product, application, questions: ini
     // Only handle a single file even if multiple are somehow provided
     const file = files[0];
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
-      alert(`File ${file.name} is too large. File size must be less than 5MB`);
+    // Validate file size (configurable client-side limit)
+    if (file.size > CLIENT_MAX_UPLOAD_SIZE) {
+      alert(`File ${file.name} is too large. File size must be less than ${CLIENT_MAX_UPLOAD_SIZE_MB}MB`);
       return;
     }
 
@@ -196,26 +208,59 @@ export default function DesignApplication({ product, application, questions: ini
       // Create a local preview immediately for better UX
       const localUrl = URL.createObjectURL(file);
 
-      const formData = new FormData();
-      formData.append('file', file);
-      formData.append('applicationId', application.id);
-      formData.append('fileType', questionId === 'styleReferenceImages' ? 'style_reference' : 'question_answer');
-      formData.append('questionId', questionId);
+      // Try server-side upload API first, fallback to client-side if it fails
+      let fileUrl: string;
+      
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('applicationId', application.id);
+        formData.append('fileType', questionId);
+        formData.append('questionId', questionId);
 
-      const response = await fetch('/api/upload-design-file', {
-        method: 'POST',
-        body: formData,
-      });
+        const uploadResponse = await fetch('/api/upload-design-file', {
+          method: 'POST',
+          body: formData,
+        });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        alert(`Failed to upload ${file.name}: ${errorData.error}`);
-        return;
+        if (uploadResponse.ok) {
+          const uploadResult = await uploadResponse.json();
+          fileUrl = uploadResult.fileUrl;
+          console.log('Server-side upload successful:', fileUrl);
+        } else {
+          // Server-side upload failed, try client-side as fallback
+          console.warn('Server-side upload failed, trying client-side fallback...');
+          throw new Error('Server-side upload failed');
+        }
+      } catch (error) {
+        console.log('Falling back to client-side upload...');
+        
+        // Client-side upload fallback
+        const fileExt = file.name.split('.').pop();
+        const remotePath = `${application.id}/${questionId}/${Date.now()}.${fileExt}`;
+
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('design-files')
+          .upload(remotePath, file, { cacheControl: '3600', upsert: false });
+
+                 if (uploadError) {
+           console.error('Client-side upload error:', uploadError);
+           
+           // Check if it's an RLS policy issue
+           if (uploadError.message?.includes('row-level security policy')) {
+             alert(`Upload failed: Storage policies require authentication. Please contact support to configure anonymous uploads.`);
+           } else {
+             alert(`Failed to upload ${file.name}: ${uploadError.message || JSON.stringify(uploadError)}`);
+           }
+           return;
+         }
+
+        const { data: urlData } = supabase.storage.from('design-files').getPublicUrl(remotePath);
+        fileUrl = urlData.publicUrl;
+        console.log('Client-side upload successful:', fileUrl);
       }
 
-  const { fileUrl } = await response.json();
-
-  // Store the uploaded file URL(s)
+        // Store the uploaded file URL(s)
       if (questionId === 'styleReferenceImages') {
         // Append to existing array for style references
         const existingFiles = Array.isArray(applicationData[questionId]) ? applicationData[questionId] as string[] : [];
@@ -229,11 +274,34 @@ export default function DesignApplication({ product, application, questions: ini
         ...prev,
         [questionId]: questionId === 'styleReferenceImages' ? [...(prev[questionId] || []), localUrl] : [localUrl],
       }));
+      
+      console.log(`Successfully uploaded ${file.name} to ${fileUrl}`);
       return fileUrl;
     } catch (error) {
       console.error('Error uploading file:', error);
-      alert(`Failed to upload ${file.name}`);
-      return undefined;
+      
+      // Fallback: Store file locally and show warning
+      const localUrl = URL.createObjectURL(file);
+      const warningMessage = `File upload failed, but ${file.name} has been stored locally for your design application. You can continue with your application, but the file will not be permanently stored.`;
+      
+      alert(warningMessage);
+      console.warn(warningMessage);
+      
+      // Store the local URL in application data as a fallback
+      if (questionId === 'styleReferenceImages') {
+        const existingFiles = Array.isArray(applicationData[questionId]) ? applicationData[questionId] as string[] : [];
+        updateApplicationData(questionId, [...existingFiles, localUrl]);
+      } else {
+        updateApplicationData(questionId, localUrl);
+      }
+      
+      // Update previews UI
+      setPreviews(prev => ({
+        ...prev,
+        [questionId]: questionId === 'styleReferenceImages' ? [...(prev[questionId] || []), localUrl] : [localUrl],
+      }));
+      
+      return localUrl; // Return local URL as fallback
     } finally {
       // Clear uploading state by removing the key so the overlay can't linger.
       setUploadingFiles(prev => {

@@ -13,6 +13,11 @@ interface OptionGridProps {
 }
 
 export default function OptionGrid({ slug, options, selectedValue, onSelect, question, setCustomizing, isCustomizing }: OptionGridProps) {
+  // Safety check to prevent hydration issues
+  if (!slug || !options) {
+    return <div>Loading...</div>;
+  }
+  
   const [items, setItems] = useState<Record<string, { id?: string; image_url?: string | null; description?: string | null }>>({});
   const PAGE_SIZE = 6;
   const [pageIdx, setPageIdx] = useState(0);
@@ -39,13 +44,17 @@ export default function OptionGrid({ slug, options, selectedValue, onSelect, que
     };
   }, [slug]);
 
+  const pageOptions = options.slice(pageIdx * PAGE_SIZE, pageIdx * PAGE_SIZE + PAGE_SIZE);
+
   return (
     <>
       <div className="choice-grid three-cols">
-        {options.slice(pageIdx * PAGE_SIZE, pageIdx * PAGE_SIZE + PAGE_SIZE).map((opt) => {
+        {pageOptions.map((opt) => {
+          if (!opt) return null; // Safety check
+          const item = items[opt];
+          if (!item) return null; // Safety check for item lookup
           // `items` map may contain metadata keyed by name or id; prefer id when available
-          const meta = items[opt] || {};
-          const idForOpt = meta.id;
+          const idForOpt = item.id;
           const isSelected = selectedValue === opt || (idForOpt && selectedValue === idForOpt);
           return (
             <button
@@ -53,12 +62,11 @@ export default function OptionGrid({ slug, options, selectedValue, onSelect, que
               type="button"
               className={`choice-card ${isSelected ? 'selected' : ''}`}
               onClick={() => { onSelect(idForOpt || opt); setCustomizing(false); }}
+              aria-pressed={isSelected ? "true" : "false"}
             >
-              {meta.image_url ? (
-                <img src={meta.image_url} alt={opt} className="choice-card-image" />
-              ) : null}
+              {item.image_url ? <img src={item.image_url} alt={opt} className="choice-card-image" /> : null}
               <div className="choice-card-name">{opt}</div>
-              {meta.description ? <div className="choice-card-desc">{meta.description}</div> : null}
+              {item.description && <div className="choice-card-description">{item.description}</div>}
             </button>
           );
         })}

@@ -42,9 +42,9 @@ export default async function StorePage() {
       use_cases: Array.isArray(product.use_cases) ? product.use_cases : [],
       materials: Array.isArray(product.materials) ? product.materials : [],
       sizes: Array.isArray(product.sizes) ? product.sizes : [],
-      starting_price: `$${product.starting_price || '0.00'}`,
-      min_quantity: product.min_quantity || 1,
-      design_time: product.design_time || "1-2 business days",
+      starting_price: `$${product.price || '0.00'}`,
+      min_quantity: 1, // Default minimum quantity
+      design_time: "1-2 business days", // Default design time
       examples: Array.isArray(product.examples) ? product.examples : []
     })),
     features: {

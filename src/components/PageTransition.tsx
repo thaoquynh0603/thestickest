@@ -2,6 +2,7 @@
 
 import { motion, AnimatePresence } from 'framer-motion';
 import { usePathname } from 'next/navigation';
+import { useState, useEffect } from 'react';
 
 interface PageTransitionProps {
   children: React.ReactNode;
@@ -9,6 +10,16 @@ interface PageTransitionProps {
 
 export default function PageTransition({ children }: PageTransitionProps) {
   const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!isMounted) {
+    return <div className="page-transition-wrapper"><div className="page-content">{children}</div></div>;
+  }
 
   // Different transition variants for different page types
   const pageVariants = {

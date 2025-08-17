@@ -195,12 +195,17 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
     question_text: q.question_text,
     subtext: (q as any).subtext ?? null,
     question_type: q.question_type,
-    option_items: questionOptionItems[q.id],
+    option_items: questionOptionItems[q.id] || [],
     is_required: q.is_required || false,
     sort_order: q.sort_order || 0,
     is_customisable: Boolean(q.is_customisable),
     custom_template_id: q.custom_template_id ? String(q.custom_template_id) : null
   }));
+
+  // Safety check to ensure we have valid data before rendering
+  if (!designApplication || !product) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <DesignApplication 

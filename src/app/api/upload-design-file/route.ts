@@ -1,6 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 
+// Configurable max upload size in megabytes via env var MAX_UPLOAD_SIZE_MB
+// Default to 50 MB to allow larger design files. Adjust as needed.
+const MAX_UPLOAD_SIZE_MB = parseInt(process.env.MAX_UPLOAD_SIZE_MB || '50', 10);
+const MAX_UPLOAD_SIZE = MAX_UPLOAD_SIZE_MB * 1024 * 1024;
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
@@ -23,10 +28,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file size (5MB limit)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (configurable limit)
+    if (file.size > MAX_UPLOAD_SIZE) {
       return NextResponse.json(
-        { error: 'File size must be less than 5MB' },
+        { error: `File size must be less than ${MAX_UPLOAD_SIZE_MB}MB` },
         { status: 400 }
       );
     }
@@ -42,6 +47,20 @@ export async function POST(request: NextRequest) {
 
     // Use anon server client; RLS policies on Storage allow this insert
     const supabase = createClient();
+
+    // If the server is expected to perform DB RPC/inserts that require elevated
+    // privileges, ensure the SUPABASE_SERVICE_ROLE_KEY is present. If it's not
+    // set, RLS may block inserts and produce confusing errors like
+    // "new row violates row-level security policy". Fail fast with a clear
+    // message so operators can fix env configuration.
+    const hasServiceRole = Boolean(process.env.SUPABASE_SERVICE_ROLE_KEY);
+    if (!hasServiceRole) {
+      console.error('SUPABASE_SERVICE_ROLE_KEY is not set on the server; RPC/inserts may be blocked by RLS.');
+      return NextResponse.json(
+        { error: 'Server is not configured with SUPABASE_SERVICE_ROLE_KEY required for recording uploads. Please set SUPABASE_SERVICE_ROLE_KEY in the server environment.' },
+        { status: 500 }
+      );
+    }
 
     // Generate unique filename
     const fileExt = file.name.split('.').pop();

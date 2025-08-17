@@ -34,25 +34,39 @@ const validatePosition = (position: string | null | undefined): PositionClass =>
 
 // Convert raw carousel data to validated carousel data
 const validateCarousels = (rawCarousels: RawCarousel[]): Carousel[] => {
-  return rawCarousels.map(carousel => ({
-    title: carousel.title,
-    items: carousel.items.map(item => ({
-      image: item.image,
-      caption: item.caption,
-      features: item.features,
-      unique: item.unique ? {
-        title: item.unique.title,
-        bullets: item.unique.bullets,
-        position: validatePosition(item.unique.position)
-      } : undefined
-    }))
-  }));
+  if (!Array.isArray(rawCarousels)) return [];
+  return rawCarousels.map(carousel => {
+    if (!carousel || !Array.isArray(carousel.items)) return { title: '', items: [] };
+    return {
+      title: carousel.title || '',
+      items: carousel.items.map(item => {
+        if (!item) return { image: '', caption: '', features: [] };
+        return {
+          image: item.image || '',
+          caption: item.caption || '',
+          features: Array.isArray(item.features) ? item.features : [],
+          unique: item.unique ? {
+            title: item.unique.title || '',
+            bullets: Array.isArray(item.unique.bullets) ? item.unique.bullets : [],
+            position: validatePosition(item.unique.position)
+          } : undefined
+        };
+      })
+    };
+  });
 };
 
 export default function StickerShowcase({ title, subtitle, carousels, featureLabels, overlay }: Props) {
-  const validatedCarousels = validateCarousels(carousels);
-  const items = validatedCarousels.flatMap((c) => c.items);
+  const validatedCarousels = validateCarousels(carousels || []);
+  const items = validatedCarousels.flatMap((c) => c.items || []);
   const [index, setIndex] = useState(0);
+
+  // Ensure index is within bounds
+  useEffect(() => {
+    if (items && items.length > 0 && index >= items.length) {
+      setIndex(0);
+    }
+  }, [items, index]);
 
   const containerRef = useRef<HTMLDivElement | null>(null);
   const overlayRef = useRef<HTMLDivElement | null>(null);
@@ -60,6 +74,8 @@ export default function StickerShowcase({ title, subtitle, carousels, featureLab
 
   // Auto-slide every 3 seconds
   useEffect(() => {
+    if (!items || items.length <= 1) return;
+    
     intervalRef.current = setInterval(() => {
       setIndex((prevIndex) => (prevIndex + 1) % items.length);
     }, 2000);
@@ -73,6 +89,8 @@ export default function StickerShowcase({ title, subtitle, carousels, featureLab
 
   // Function to reset the auto-slide timer
   const resetAutoSlide = () => {
+    if (!items || items.length <= 1) return;
+    
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
     }
@@ -132,7 +150,7 @@ export default function StickerShowcase({ title, subtitle, carousels, featureLab
       overlayEl.style.setProperty('--overlay-y', `${Math.max(0, y)}px`);
     };
 
-    const pos: PositionClass = items[index]?.unique?.position ?? 'bottom-left';
+    const pos: PositionClass = (items && items[index] && items[index].unique && items[index].unique.position) ? items[index].unique.position : 'bottom-left';
     place(pos);
 
     const onResize = () => place(pos);
@@ -148,15 +166,15 @@ export default function StickerShowcase({ title, subtitle, carousels, featureLab
         <div ref={overlayRef} className={`showcase-overlay floating`}>
           <div className="card" style={{ padding: 14 }}>
             <h2 id="showcase-heading" style={{ marginTop: 0, marginBottom: 4, fontWeight: 900, fontSize: '18px' }}>
-              {items[index]?.unique?.title ?? title}
+              {(items && items[index] && items[index].unique && items[index].unique.title) ? items[index].unique.title : title}
             </h2>
             <p style={{ color: 'var(--muted-ink)', fontWeight: 600, marginTop: 0, fontSize: '14px' }}>
               {subtitle}
             </p>
             <ul style={{ marginTop: 8, marginBottom: 0, paddingLeft: 18 }}>
-              {(items[index]?.unique?.bullets ?? overlay?.bullets ?? []).map((b) => (
+              {((items && items[index] && items[index].unique && items[index].unique.bullets) ? items[index].unique.bullets : (overlay && overlay.bullets ? overlay.bullets : [])).map((b) => (
                 <li key={b} style={{ fontWeight: 700, fontSize: '14px' }}>{b}</li>
-              ))}
+          ))}
             </ul>
           </div>
         </div>
@@ -175,16 +193,25 @@ function FullBleedCarousel({ items, index, onChange, containerRef, onManualNavig
   const go = (delta: number) => {
     // Reset the auto-slide timer when manually navigating
     onManualNavigate();
-    onChange((index + delta + items.length) % items.length);
+    if (items && items.length > 0) {
+      onChange((index + delta + items.length) % items.length);
+    }
   };
+
+  if (!items || items.length === 0) {
+    return <div className="fullbleed-carousel" ref={containerRef}><div className="slide active">No items available</div></div>;
+  }
 
   return (
     <div className="fullbleed-carousel" ref={containerRef}>
-      {items.map((item, i) => (
-        <div key={i} className={`slide ${i === index ? 'active' : ''}`}>
-          <img src={item.image} alt={item.caption} />
-        </div>
-      ))}
+      {items.map((item, i) => {
+        if (!item) return null;
+        return (
+          <div key={i} className={`slide ${i === index ? 'active' : ''}`}>
+            <img src={item.image || ''} alt={item.caption || ''} />
+          </div>
+        );
+      })}
 
       <button className="pill carousel-btn prev" aria-label="Previous" onClick={() => go(-1)}>◀</button>
       <button className="pill carousel-btn next" aria-label="Next" onClick={() => go(1)}>▶</button>
