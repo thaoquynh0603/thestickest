@@ -10,7 +10,7 @@ type Props = {
 
 export default function WorryFree({ title, description, items, closing }: Props) {
   const iconFor = (label: string) => {
-    const lower = label.toLowerCase();
+    const lower = (label || '').toLowerCase();
     if (lower.includes('secure') || lower.includes('payment')) return '🔒';
     if (lower.includes('quality') || lower.includes('trust')) return '🛡️';
     if (lower.includes('support')) return '💬';

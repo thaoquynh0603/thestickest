@@ -31,11 +31,11 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
+    // Validate file type: accept any image/* mime type
+    const isImage = file.type && file.type.startsWith('image/');
+    if (!isImage) {
       return NextResponse.json(
-        { error: 'Please upload a valid image file (JPG, PNG, or GIF)' },
+        { error: 'Please upload a valid image file (JPG, PNG, GIF, HEIC, etc.)' },
         { status: 400 }
       );
     }
@@ -69,9 +69,10 @@ export async function POST(request: NextRequest) {
       .getPublicUrl(fileName);
 
     // Persist to answers history when we have a questionId
+    let rpcResult: any = null;
     if (questionId) {
       try {
-        await supabase.rpc('add_design_request_answer_history', {
+        rpcResult = await supabase.rpc('add_design_request_answer_history', {
           p_request_id: applicationId,
           p_question_id: questionId,
           p_answer_text: undefined,
@@ -80,13 +81,15 @@ export async function POST(request: NextRequest) {
         });
       } catch (e) {
         console.warn('Failed to log answer history for upload', e);
+        return NextResponse.json({ error: 'Uploaded but failed to record answer history', details: String(e) }, { status: 500 });
       }
     }
 
     return NextResponse.json({
       success: true,
       fileUrl: urlData.publicUrl,
-      fileName: fileName
+      fileName: fileName,
+      rpcResult
     });
 
   } catch (error) {

@@ -206,7 +206,7 @@ export function CarouselSection({ product }: CarouselSectionProps) {
           <div className="hero-carousel-message">
             <h1 className="hero-carousel-title">{carouselData[currentSlide].title}</h1>
             <p className="hero-carousel-subtitle">{carouselData[currentSlide].subtitle}</p>
-            <Link href={`/store/${product.slug}/design`} className="cta-button-primary hero-carousel-cta" aria-label="Start design from this category">
+            <Link href={"http://localhost:3000/store/general_default_hidden/design"} className="cta-button-primary hero-carousel-cta" aria-label="Start design from this category">
               Start Design
             </Link>
           </div>

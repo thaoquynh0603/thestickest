@@ -1,5 +1,7 @@
-import Image from 'next/image';
+"use client";
 
+import Image from 'next/image';
+import CTA from './CTA';
 type Props = {
   attention: string;
   ctaText: string;
@@ -25,8 +27,11 @@ export default function Hero({ attention, ctaText, buttonText }: Props) {
             height={320}
             priority
           />
-          <a className="hero-button" href="/store">
+          <a href="/store/general_default_hidden/design" className='large-cta hero-cta' style={{ background: 'var(--color-primary)' }}>
             {buttonText}
+          </a>
+          <a href="/store" className="store-link-btn" aria-label="View our store">
+            View Our Store
           </a>
         </div>
       </div>

@@ -6,6 +6,7 @@ import { Product } from '@/types/database';
 import type { DesignApplication } from '@/types/database';
 import { QuestionRenderer } from './design-application/QuestionRenderer';
 import { ReviewSummary } from './design-application/ReviewSummary';
+import HowDidYouHear from './design-application/HowDidYouHear';
 import { PaymentStep } from './design-application/PaymentStep';
 import { SuccessStep } from './design-application/SuccessStep';
 import { ErrorStep } from './design-application/ErrorStep';
@@ -23,28 +24,66 @@ export default function DesignApplication({ product, application, questions: ini
   const [currentStep, setCurrentStep] = useState(0); // 0 = welcome
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [saveSnapshots, setSaveSnapshots] = useState<Array<any>>([]);
   const [questions, setQuestions] = useState<ApplicationQuestion[]>(initialQuestions);
-  const [applicationData, setApplicationData] = useState<ApplicationData>({
-    email: application.email || ''
+  const storageKey = `design_application:${application.id}`;
+
+  const [applicationData, setApplicationData] = useState<ApplicationData>(() => {
+    try {
+      if (typeof window !== 'undefined') {
+        const raw = localStorage.getItem(storageKey);
+        if (raw) {
+          const parsed = JSON.parse(raw || '{}');
+          return { ...(parsed as ApplicationData), email: application.email || '' } as ApplicationData;
+        }
+      }
+    } catch (e) {
+      // ignore parse errors
+    }
+    return { email: application.email || '' } as ApplicationData;
   });
   const [previews, setPreviews] = useState<Record<string, string[]>>({});
   const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
-  const [selectedStyleId, setSelectedStyleId] = useState<string>('');
+  // selections are stored in applicationData[question.id] (prefer stable IDs when provided)
   const [designCode, setDesignCode] = useState<string>(application.design_code);
   const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
   const [customFlowCompletion, setCustomFlowCompletion] = useState<Record<string, boolean>>({});
+  // Find the first question that has option_items from a design-style-like source.
+  // The API now returns `option_source_type` per question (e.g. 'design_styles', 'question_demo_items').
   const styleQuestionIndex = useMemo(() => {
-    return questions.findIndex((q) => q.option_items && Array.isArray(q.option_items) && q.option_items.length > 0 && q.question_text.toLowerCase().includes('style'));
+    return questions.findIndex((q) => q.option_items && Array.isArray(q.option_items) && q.option_items.length > 0 && (q as any).option_source_type === 'design_styles');
   }, [questions]);
 
   // Initialize application data with empty values for each question
   useEffect(() => {
-    const initialData: ApplicationData = { email: application.email || '' };
-    questions.forEach((question: ApplicationQuestion) => {
-      initialData[question.id] = '';
+    // Only seed missing keys so we don't clobber user-entered answers when questions change
+    setApplicationData((prev) => {
+      const next: ApplicationData = { ...(prev ?? {}), email: application.email || '' } as ApplicationData;
+      questions.forEach((question: ApplicationQuestion) => {
+        if (!Object.prototype.hasOwnProperty.call(next, question.id)) {
+          next[question.id] = '';
+        }
+      });
+      // Initialize the global howDidYouHear as an empty array if not present
+      if (!Object.prototype.hasOwnProperty.call(next, 'howDidYouHear')) {
+        (next as any).howDidYouHear = [];
+      }
+      return next;
     });
-    setApplicationData(initialData);
   }, [questions, application.email]);
+
+  // Debounced autosave of partial answers to localStorage
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(applicationData));
+      } catch (e) {
+        // ignore quota or serialization errors
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [applicationData, storageKey]);
 
   const updateApplicationData = (field: string, value: string | File | string[]) => {
     setApplicationData(prev => ({
@@ -57,14 +96,19 @@ export default function DesignApplication({ product, application, questions: ini
     setIsSaving(true);
     try {
       const answers: { [key: string]: any } = {};
-      
-      // Build answers object from questions
-      questions.forEach(question => {
-        const value = applicationData[question.id];
+
+      // Build answers object from all applicationData entries.
+      // This ensures namespaced keys produced by custom flows (e.g. `${question.id}:${templateId}`)
+      // are included so independent custom templates do not collide when saved.
+      Object.entries(applicationData).forEach(([key, value]) => {
         if (value !== undefined && value !== null && value !== '') {
-          answers[question.id] = value;
+          answers[key] = value;
         }
       });
+      // Include the global HowDidYouHear answer under a stable key
+      if (Array.isArray(applicationData.howDidYouHear) && applicationData.howDidYouHear.length > 0) {
+        answers['how_did_you_hear'] = applicationData.howDidYouHear;
+      }
 
       const response = await fetch('/api/design-requests', {
         method: 'PATCH',
@@ -82,6 +126,27 @@ export default function DesignApplication({ product, application, questions: ini
         const errorData = await response.json();
         console.error('Failed to save progress:', errorData);
       }
+      // capture a debug snapshot of what we attempted to save
+      try {
+        const snapshot = {
+          requestId: application.id,
+          timestamp: new Date().toISOString(),
+          answers,
+          email: applicationData.email
+        };
+        // keep in-memory history since application started
+        setSaveSnapshots(prev => [...prev, snapshot]);
+        // also POST to debug endpoint so server logs contain the snapshot
+        fetch('/api/debug/save-snapshot', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(snapshot)
+        }).catch((e) => console.warn('Failed to send debug snapshot', e));
+        // client debug log
+        console.debug('Saved progress snapshot', snapshot);
+      } catch (e) {
+        console.warn('Failed to capture save snapshot', e);
+      }
     } catch (error) {
       console.error('Error saving progress:', error);
     } finally {
@@ -89,7 +154,7 @@ export default function DesignApplication({ product, application, questions: ini
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, questionId: string) => {
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, questionId: string): Promise<string | undefined> => {
     const files = event.target.files;
     if (!files || files.length === 0) return;
 
@@ -103,9 +168,24 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Validate file type
-    const allowedTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/gif'];
-    if (!allowedTypes.includes(file.type)) {
-      alert(`File ${file.name} is not a valid image file. Please upload JPG, PNG, or GIF files only`);
+    // Accept common web image types plus iPhone HEIC/HEIF variants. Some iPhones produce HEIC/HEIF images
+    // which have MIME types like image/heic or image/heif; reject only clearly non-image files here.
+    const allowedTypes = [
+      'image/jpeg',
+      'image/jpg',
+      'image/png',
+      'image/gif',
+      'image/heic',
+      'image/heif',
+      'image/heif-sequence',
+      'image/heic-sequence',
+    ];
+
+    // Some browsers may report no specific subtype; allow any image/* as a fallback.
+    const isImageType = file.type.startsWith('image/');
+
+    if (!isImageType || (!allowedTypes.includes(file.type) && !file.type.startsWith('image/'))) {
+      alert(`File ${file.name} is not a valid image file. Please upload JPG, PNG, GIF, or HEIC/HEIF files.`);
       return;
     }
 
@@ -133,9 +213,9 @@ export default function DesignApplication({ product, application, questions: ini
         return;
       }
 
-      const { fileUrl } = await response.json();
+  const { fileUrl } = await response.json();
 
-      // Store the uploaded file URL(s)
+  // Store the uploaded file URL(s)
       if (questionId === 'styleReferenceImages') {
         // Append to existing array for style references
         const existingFiles = Array.isArray(applicationData[questionId]) ? applicationData[questionId] as string[] : [];
@@ -149,14 +229,24 @@ export default function DesignApplication({ product, application, questions: ini
         ...prev,
         [questionId]: questionId === 'styleReferenceImages' ? [...(prev[questionId] || []), localUrl] : [localUrl],
       }));
+      return fileUrl;
     } catch (error) {
       console.error('Error uploading file:', error);
       alert(`Failed to upload ${file.name}`);
+      return undefined;
     } finally {
-      // Clear uploading state
-      setUploadingFiles(prev => ({ ...prev, [questionId]: false }));
+      // Clear uploading state by removing the key so the overlay can't linger.
+      setUploadingFiles(prev => {
+        const next = { ...prev } as Record<string, boolean>;
+        try {
+          delete next[questionId];
+        } catch (e) {
+          // ignore
+        }
+        return next;
+      });
       // Clear the input
-      event.target.value = '';
+      try { event.target.value = ''; } catch (e) { /* ignore */ }
     }
   };
 
@@ -219,12 +309,13 @@ export default function DesignApplication({ product, application, questions: ini
     if (styleQuestionIndex >= 0 && currentStep === styleQuestionIndex + 1) {
       const currentQuestion = questions[styleQuestionIndex];
       if (currentQuestion) {
-        const value = applicationData[currentQuestion.id];
-        
-        // Check if user has selected a predefined style
-        if (selectedStyleId) {
-          return false; // Allow next if a predefined style is selected
-        }
+    const value = applicationData[currentQuestion.id];
+    const selectedForThis = value && typeof value === 'string' ? value : '';
+
+      // Check if user has selected a predefined style or custom option
+      if (selectedForThis || (typeof value === 'string' && value.trim() === 'custom')) {
+              return false; // Allow next if a predefined style or custom option is selected
+            }
         
         // Check if user has chosen custom option and provided data
         if (typeof value === 'string' && value.trim() !== '') {
@@ -246,12 +337,12 @@ export default function DesignApplication({ product, application, questions: ini
           }
         }
         
-        return true; // Disable next if no selection made
+  return true; // Disable next if no selection made
       }
     }
     
-    const questionIndex = currentStep - 1;
-    if (questionIndex >= 0 && questionIndex < questions.length) {
+  const questionIndex = currentStep - 1;
+  if (questionIndex >= 0 && questionIndex < questions.length) {
       const currentQuestion = questions[questionIndex];
       if (currentQuestion) {
         const value = applicationData[currentQuestion.id];
@@ -297,7 +388,13 @@ export default function DesignApplication({ product, application, questions: ini
         return false;
       }
     }
-    
+
+    // If we're on the extra 'how did you hear' step (placed after questions), require at least one selection
+    if (currentStep === questions.length + 1) {
+      const v = (applicationData as any).howDidYouHear;
+      return !Array.isArray(v) || v.length === 0;
+    }
+
     return false;
   };
 
@@ -310,17 +407,13 @@ export default function DesignApplication({ product, application, questions: ini
     if (currentStep < questions.length + 1) {
       // For style-like question, persist selection as selected_style_id
       if (styleQuestionIndex >= 0 && currentStep === styleQuestionIndex + 1) {
-        if (!selectedStyleId) {
+        const q = questions[styleQuestionIndex];
+        const selectedForThis = q ? applicationData[q.id] : '';
+        if (!selectedForThis) {
           alert('Please select a design style');
           return;
         }
-        try {
-          await fetch('/api/design-requests', {
-            method: 'PATCH',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ requestId: application.id, selectedStyleId }),
-          });
-        } catch {}
+        // Persist via saveProgress (answers in applicationData) and advance
         await saveProgress();
         setCurrentStep(currentStep + 1);
         return;
@@ -342,7 +435,7 @@ export default function DesignApplication({ product, application, questions: ini
       // Save progress before moving to next step
       // Persist selection and custom inputs
       await saveProgress();
-      setCurrentStep(currentStep + 1);
+  setCurrentStep(currentStep + 1);
     }
   };
 
@@ -355,24 +448,8 @@ export default function DesignApplication({ product, application, questions: ini
   const handleSubmit = async () => {
     setIsLoading(true);
     try {
-      // Save selected style
-      const styleResponse = await fetch('/api/design-requests', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requestId: application.id,
-          selectedStyleId: selectedStyleId
-        }),
-      });
-
-      if (!styleResponse.ok) {
-        throw new Error('Failed to save style selection');
-      }
-
-      // Final save before submission
-      await saveProgress();
+  // Final save before submission (selected style(s) are included in applicationData answers)
+  await saveProgress();
       
       // Update status to SUBMITTED
       const response = await fetch('/api/design-requests', {
@@ -387,7 +464,8 @@ export default function DesignApplication({ product, application, questions: ini
       });
 
       if (response.ok) {
-        setCurrentStep(questions.length + 2); // Move to payment step
+  setCurrentStep(questions.length + 3); // Move to payment step
+  try { if (typeof window !== 'undefined') localStorage.removeItem(storageKey); } catch (e) { /* ignore */ }
       } else {
         throw new Error('Failed to submit application');
       }
@@ -403,7 +481,8 @@ export default function DesignApplication({ product, application, questions: ini
   const goToReview = async () => {
     // Persist answers before showing the summary
     await saveProgress();
-    setCurrentStep(questions.length + 1);
+  // After last question, next is the how-did-you-hear step at questions.length + 1; goToReview should move to review which is +2
+  setCurrentStep(questions.length + 2);
   };
 
   const handleKeyPress = (event: React.KeyboardEvent) => {
@@ -427,8 +506,12 @@ export default function DesignApplication({ product, application, questions: ini
       if (currentStep < questions.length) {
         if (typeof nextStep === 'function') nextStep();
       } else if (currentStep === questions.length) {
-        if (typeof goToReview === 'function') goToReview();
+        // if we're on the last question, pressing Enter should advance to how-did-you-hear
+        if (typeof nextStep === 'function') nextStep();
       } else if (currentStep === questions.length + 1) {
+        // On how-did-you-hear, Enter should go to review
+        if (typeof goToReview === 'function') goToReview();
+      } else if (currentStep === questions.length + 2) {
         if (typeof handleSubmit === 'function') handleSubmit();
       }
     }
@@ -484,15 +567,9 @@ export default function DesignApplication({ product, application, questions: ini
               question={question}
               value={applicationData[question.id]}
               updateApplicationData={(field, val) => {
-                if (question.question_text.toLowerCase().includes('style') && typeof val === 'string') {
-                  const uuidLike = /^[0-9a-fA-F-]{36}$/;
-                  if (uuidLike.test(val)) {
-                    setSelectedStyleId(val);
-                  }
-                  updateApplicationData(field, val);
-                } else {
-                  updateApplicationData(field, val);
-                }
+                // If this question's source is a design-style (or similar), we store selection in applicationData
+                // prefer stable ids when available; QuestionRenderer already sends id when available
+                updateApplicationData(field, val);
               }}
               onFileUpload={handleFileUpload}
               onFileRemove={handleFileRemove}
@@ -520,7 +597,17 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Review step
-    if (currentStep === questions.length + 1) {
+  // Insert HowDidYouHear step at index questions.length + 1 (after all questions)
+  if (currentStep === questions.length + 1) {
+      return (
+        <HowDidYouHear
+          value={Array.isArray(applicationData.howDidYouHear) ? (applicationData.howDidYouHear as string[]) : []}
+          onChange={(vals) => updateApplicationData('howDidYouHear', vals)}
+        />
+      );
+    }
+
+  if (currentStep === questions.length + 2) {
       return (
         <ReviewSummary
           questions={questions}
@@ -529,7 +616,8 @@ export default function DesignApplication({ product, application, questions: ini
           requestId={application.id}
           selectedStyleName={(() => {
             const q = styleQuestionIndex >= 0 ? questions[styleQuestionIndex] : undefined;
-            const it = q?.option_items?.find((i) => i.id === selectedStyleId || i.name === selectedStyleId);
+            const sel = q ? (applicationData[q.id] || '') : '';
+            const it = q?.option_items?.find((i) => i.id === sel || i.name === sel);
             return it?.name;
           })()}
           customStyleDescription={
@@ -542,7 +630,7 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Payment step
-    if (currentStep === questions.length + 2) {
+  if (currentStep === questions.length + 3) {
       return (
         <PaymentStep
           applicationId={application.id}
@@ -551,19 +639,21 @@ export default function DesignApplication({ product, application, questions: ini
           isLoading={isLoading}
           onSuccess={() => {
             setPaymentStatus('success');
-            setCurrentStep(questions.length + 3);
+            // Advance to success step
+            setCurrentStep(questions.length + 4);
           }}
           onError={(error) => {
             console.error('Payment error:', error);
             setPaymentStatus('failed');
-            setCurrentStep(questions.length + 4);
+            // Advance to error step
+            setCurrentStep(questions.length + 5);
           }}
         />
       );
     }
 
     // Success step
-    if (currentStep === questions.length + 3) {
+  if (currentStep === questions.length + 4) {
       return (
         <SuccessStep
           designCode={designCode}
@@ -575,14 +665,15 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Error step
-    if (currentStep === questions.length + 4) {
+  if (currentStep === questions.length + 5) {
       return <ErrorStep designCode={designCode} productTitle={product.title || ''} />;
     }
 
     return null;
   };
 
-  const totalSteps = (questions.length + 2) + 1; // +2 for style+review, +1 for welcome
+  // steps: 0=welcome, 1..questionsLength = questions, questions.length+1 = howDidYouHear, +2 = review, +3 payment, +4 success, +5 error
+  const totalSteps = (questions.length + 4) + 1; // +4 for how-did-you-hear + review + payment + success/error, +1 welcome
 
   return (
     <div className="design-application">
@@ -609,10 +700,11 @@ export default function DesignApplication({ product, application, questions: ini
         </div>
 
         {/* Step Navigation - Now inside container for all steps */}
-        <div className="step-navigation">
+        <div className="step-navigation-container">
+          <div className="step-navigation">
           <button
             onClick={prevStep}
-            disabled={currentStep <= 1 || currentStep > questions.length + 1}
+            disabled={currentStep <= 1}
             className="nav-button prev"
           >
             Previous
@@ -635,18 +727,30 @@ export default function DesignApplication({ product, application, questions: ini
               {isSaving ? 'Saving...' : 'Next'}
             </button>
           )}
-          
+          {/* When on the last question, Next advances to how-did-you-hear */}
           {currentStep === questions.length && (
             <button
+              onClick={nextStep}
+              disabled={isNextButtonDisabled()}
+              className="nav-button next"
+            >
+              Next
+            </button>
+          )}
+
+          {/* On how-did-you-hear step, button goes to Review */}
+          {currentStep === questions.length + 1 && (
+            <button
               onClick={goToReview}
-              disabled={isLoading}
+              disabled={isLoading || isNextButtonDisabled()}
               className="nav-button submit"
             >
               {isLoading ? 'Saving...' : 'Review & Continue'}
             </button>
           )}
 
-          {currentStep === questions.length + 1 && (
+          {/* On review step, continue to payment */}
+          {currentStep === questions.length + 2 && (
             <button
               onClick={handleSubmit}
               disabled={isLoading}
@@ -655,6 +759,7 @@ export default function DesignApplication({ product, application, questions: ini
               {isLoading ? 'Preparing Payment...' : 'Continue to Payment'}
             </button>
           )}
+          </div>
         </div>
 
         {/* Back to Store */}

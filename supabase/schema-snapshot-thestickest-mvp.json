@@ -1,0 +1,79 @@
+{
+  "project_id": "hyrjcmrvrxtepvlpmgxs",
+  "schema": "public",
+  "tables": [
+    {
+      "id": 17278,
+      "name": "products"
+    },
+    {
+      "id": 17292,
+      "name": "templates"
+    },
+    {
+      "id": 17303,
+      "name": "carousel_items"
+    },
+    {
+      "id": 17369,
+      "name": "faq_submissions"
+    },
+    {
+      "id": 17402,
+      "name": "design_styles"
+    },
+    {
+      "id": 17414,
+      "name": "request_questions"
+    },
+    {
+      "id": 17433,
+      "name": "design_requests"
+    },
+    {
+      "id": 17468,
+      "name": "payment_events"
+    },
+    {
+      "id": 17487,
+      "name": "payment_analytics"
+    },
+    {
+      "id": 18775,
+      "name": "design_request_events"
+    },
+    {
+      "id": 18792,
+      "name": "design_request_states"
+    },
+    {
+      "id": 18819,
+      "name": "design_request_answers_history"
+    },
+    {
+      "id": 18863,
+      "name": "design_requests_backup"
+    },
+    {
+      "id": 18904,
+      "name": "discount_codes"
+    },
+    {
+      "id": 18993,
+      "name": "question_demo_items"
+    },
+    {
+      "id": 20112,
+      "name": "option_templates"
+    },
+    {
+      "id": 21256,
+      "name": "custom_template"
+    },
+    {
+      "id": 21265,
+      "name": "custom_questions"
+    }
+  ],
+  "snapshot_generated_at": "2025-08-16T00:00:00Z"
+}

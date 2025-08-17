@@ -1,8 +1,15 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { validateSchema } from '@/lib/schemaGuard';
 
 export async function POST(request: Request) {
   try {
+    // Ensure DB schema matches expected snapshot before proceeding
+    const schemaCheck = await validateSchema();
+    if (!schemaCheck.ok) {
+      console.error('Schema validation failed:', schemaCheck.error);
+      return NextResponse.json({ error: 'Database schema validation failed', details: schemaCheck }, { status: 503 });
+    }
     const supabase = createClient();
     const body = await request.json();
     
@@ -156,6 +163,31 @@ export async function PATCH(request: Request) {
               p_answer_file_url,
               p_answer_options,
             });
+            // If this is the global how_did_you_hear key, also persist to a dedicated table for analytics
+            if (questionId === 'how_did_you_hear') {
+            try {
+              const sb: any = supabase as any;
+              if (Array.isArray(value)) {
+                await sb.from('how_did_you_hear_answers').insert({
+                  request_id: targetRequestId,
+                  selected_options: value,
+                });
+              } else if (typeof value === 'string') {
+                // attempt to parse stringified array
+                try {
+                  const parsed = JSON.parse(value);
+                  if (Array.isArray(parsed)) {
+                    await sb.from('how_did_you_hear_answers').insert({
+                      request_id: targetRequestId,
+                      selected_options: parsed,
+                    });
+                  }
+                } catch {}
+              }
+            } catch (e) {
+              console.warn('Failed to insert how_did_you_hear_answers record', e);
+            }
+            }
           } catch (e) {
             console.warn('Failed to log answer history for question', questionId, e);
           }

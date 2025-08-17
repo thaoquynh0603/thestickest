@@ -1,0 +1,36 @@
+{
+  "welcome_page": {
+    "title": "Welcome",
+    "compact_pricing": {
+      "header": "Transparent. Easy. Worry-free.",
+      "steps": [
+        {
+          "title": "Start Your Design for Just $2",
+          "description": "Your sticker design deposit is only $2—and it's fully refundable if you're not completely satisfied!",
+          "note": "Includes one free feedback session"
+        },
+        {
+          "title": "Approve and Customize",
+          "description": "After you approve your beautiful design, easily choose your sticker options:",
+          "options": ["Material", "Size", "Quantity"],
+          "price_range": "Prices range from just $2 to $7 per sticker."
+        },
+        {
+          "title": "Order Exactly What You Need",
+          "description": "No minimum order—order one or one hundred, completely your choice!",
+          "shipping_info": "Free shipping on orders of 50 stickers or more."
+        }
+      ]
+    },
+    "process_intro": "Here's the simple process to get your custom stickers:",
+    "process_steps": [
+      "1. Fill out the application and pay refundable fee",
+      "2. Then the design will be send within 24 hours with a order form",
+      "3. you fill out the order form and pay for the physical sticker and delivery fee"
+    ],
+    "cta": {
+      "text": "Let's make stickers",
+      "aria_label": "Let's make stickers"
+    }
+  }
+}

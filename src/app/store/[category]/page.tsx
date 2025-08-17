@@ -32,7 +32,8 @@ export async function generateStaticParams() {
   const { data: products, error } = await supabase
     .from('products')
     .select('slug')
-    .eq('is_active', true);
+    .eq('is_active', true)
+    .neq('slug', 'general_default_hidden');
   
   if (error || !products) {
     return [];

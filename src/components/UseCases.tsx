@@ -26,6 +26,11 @@ export default function UseCases({ useCases, additionalBenefits }: Props) {
             style={{ height: '100%', width: 'auto' }}
           />
         </div>
+        <div style={{ marginTop: 18, textAlign: 'center' }}>
+          <a href="/store" className="large-cta" aria-label="View our store" style={{ background: 'var(--color-primary)' }}>
+            View our store
+          </a>
+        </div>
       </div>
     </section>
   );

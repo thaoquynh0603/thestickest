@@ -9,6 +9,7 @@ export default async function StorePage() {
     .from('products')
     .select('*')
     .eq('is_active', true)
+  .neq('slug', 'general_default_hidden')
     .order('display_order', { ascending: true });
 
   if (error || !products) {

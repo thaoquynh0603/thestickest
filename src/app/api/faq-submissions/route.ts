@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { validateSchema } from '@/lib/schemaGuard';
 
 // Create a Supabase client for server-side operations
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -9,6 +10,11 @@ const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
 
 export async function GET(request: NextRequest) {
   try {
+    const schemaCheck = await validateSchema();
+    if (!schemaCheck.ok) {
+      console.error('Schema validation failed:', schemaCheck.error);
+      return NextResponse.json({ error: 'Database schema validation failed', details: schemaCheck }, { status: 503 });
+    }
     // Get query parameters for filtering and pagination
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');

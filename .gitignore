@@ -1,6 +1,11 @@
 node_modules
 .env.local
-.env.local
 
 #remove next folder
 .next/
+
+.cursor/
+
+.github/
+
+.vscode/

@@ -54,8 +54,10 @@ export async function GET(request: NextRequest) {
       designStyles = ds || [];
     }
 
-    // Build option items resolved from templates
-    const questionOptionItems: Record<string, Array<{ id?: string; name: string; description?: string | null; image_url?: string | null }>> = {};
+  // Build option items resolved from templates
+  const questionOptionItems: Record<string, Array<{ id?: string; name: string; description?: string | null; image_url?: string | null }>> = {};
+  // Track the source_type for each question's option template so frontend can detect sources (e.g. design_styles)
+  const questionOptionSourceType: Record<string, string | null> = {};
 
     for (const q of questions || []) {
       if (!q.option_template_id) continue;
@@ -66,6 +68,8 @@ export async function GET(request: NextRequest) {
         .limit(1);
       const tmpl = templates?.[0] as any;
       if (!tmpl) continue;
+      // remember the template source type for this question
+      questionOptionSourceType[q.id] = tmpl.source_type || null;
       if (tmpl.source_type === 'design_styles') {
         questionOptionItems[q.id] = (designStyles || []).map((s: any) => ({ id: s.id, name: s.name, description: s.description, image_url: s.image_url }));
       } else if (tmpl.source_type === 'question_demo_items') {
@@ -76,6 +80,25 @@ export async function GET(request: NextRequest) {
           .eq('is_active', true)
           .order('sort_order', { ascending: true });
         questionOptionItems[q.id] = (demoItems || []).map((d: any) => ({ id: d.id, name: d.name, description: d.description, image_url: d.image_url }));
+      } else if (tmpl.source_type === 'products') {
+        // Support product-based option templates. Allow optional filtering via template config.
+        try {
+          const cfg = (tmpl.source_config || {}) as any;
+          let productsQuery: any = supabase
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .neq('slug', 'general_default_hidden')
+            .order('display_order', { ascending: true });
+          // If template config specifies a template_id, restrict to that template
+          if (cfg && cfg.template_id) {
+            productsQuery = productsQuery.eq('template_id', cfg.template_id);
+          }
+          const { data: products } = await productsQuery;
+          questionOptionItems[q.id] = (products || []).map((p: any) => ({ id: p.id, name: p.title || p.name || p.slug, description: p.subtitle || p.description || null, image_url: p.product_image_url || null }));
+        } catch (e) {
+          // ignore and leave option items undefined
+        }
       }
     }
 
@@ -84,6 +107,7 @@ export async function GET(request: NextRequest) {
       question_text: q.question_text,
       question_type: q.question_type,
       option_items: questionOptionItems[q.id],
+      option_source_type: questionOptionSourceType[q.id] || null,
       is_required: q.is_required || false,
       is_customisable: q.is_customisable || false,
       custom_template_id: q.custom_template_id || null,

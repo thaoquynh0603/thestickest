@@ -118,6 +118,25 @@ export default async function DesignPage({ params, searchParams }: DesignPagePro
       if (!demoErr && demoItems) {
         questionOptionItems[q.id] = demoItems.map((d: any) => ({ id: d.id, name: d.name, description: d.description, image_url: d.image_url }));
       }
+    } else if (tmpl.source_type === 'products') {
+      try {
+        const cfg = (tmpl.source_config || {}) as any;
+        let productsQuery: any = supabase
+          .from('products')
+          .select('*')
+          .eq('is_active', true)
+          .neq('slug', 'general_default_hidden')
+          .order('display_order', { ascending: true });
+        if (cfg && cfg.template_id) {
+          productsQuery = productsQuery.eq('template_id', cfg.template_id);
+        }
+        const { data: products } = await productsQuery;
+        if (products) {
+          questionOptionItems[q.id] = (products || []).map((p: any) => ({ id: p.id, name: p.title || p.name || p.slug, description: p.subtitle || p.description || null, image_url: p.product_image_url || null }));
+        }
+      } catch (e) {
+        // ignore
+      }
     }
   }
 

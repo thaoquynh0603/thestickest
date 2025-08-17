@@ -50,7 +50,7 @@ export default function NavBar() {
             <Link role="menuitem" href="/about" onClick={() => setOpen(false)}>About</Link>
             <Link role="menuitem" href="/store" onClick={() => setOpen(false)}>Store</Link>
             <Link role="menuitem" href="/faq" onClick={() => setOpen(false)}>FAQ</Link>
-            <Link role="menuitem" className="mobile-cta" href="/store" onClick={() => setOpen(false)}>Create stickers</Link>
+            <Link role="menuitem" className="mobile-cta" href="/store/general_default_hidden/design" onClick={() => setOpen(false)}>Create stickers</Link>
           </div>
         </div>
       </div>
