@@ -144,6 +144,11 @@ export async function POST(request: NextRequest) {
       subtitle: product.subtitle
     });
 
+    // Log if this is a general_default_hidden product that needs special handling
+    if (product.slug === 'general_default_hidden') {
+      console.log('🔍 This is a general_default_hidden product - will look for user product choice context');
+    }
+
     // Get previous answers for this request to replace placeholders
     const { data: previousAnswers, error: answersError } = await supabase
       .from('design_request_answers_history')
@@ -159,11 +164,101 @@ export async function POST(request: NextRequest) {
     let finalPrompt = question.ai_generated_prompt;
 
     // Replace product placeholders if slug is general_default_hidden
+    let userSelectedProduct = null;
+    
     if (product.slug === 'general_default_hidden') {
-      finalPrompt = finalPrompt
-        .replace(/##product_title##/g, product.title || '')
-        .replace(/##product_subtitle##/g, product.subtitle || '')
-        .replace(/##description##/g, product.description || '');
+      // For general_default_hidden products, we need to find the user's actual product choice
+      // from the "What product are you interested in?" question
+      
+      if (previousAnswers && previousAnswers.length > 0) {
+        // Look for the answer to the "What product are you interested in?" question
+        // This question has ID: 200ad2dc-bf2d-45c6-8aa7-1e0339a7f589
+        const productChoiceAnswer = previousAnswers.find(answer => 
+          answer.question_id === '200ad2dc-bf2d-45c6-8aa7-1e0339a7f589'
+        );
+        
+        if (productChoiceAnswer && productChoiceAnswer.answer_text) {
+          console.log('✅ Found user product choice:', productChoiceAnswer.answer_text);
+          
+          // The answer_text contains the product ID, so look it up directly
+          const { data: selectedProduct, error: selectedProductError } = await supabase
+            .from('products')
+            .select('id, slug, title, subtitle, description')
+            .eq('id', productChoiceAnswer.answer_text)
+            .eq('is_active', true)
+            .neq('slug', 'general_default_hidden')
+            .single();
+          
+          if (selectedProduct && !selectedProductError) {
+            userSelectedProduct = selectedProduct;
+            console.log('✅ Found matching product:', {
+              id: selectedProduct.id,
+              slug: selectedProduct.slug,
+              title: selectedProduct.title,
+              subtitle: selectedProduct.subtitle
+            });
+          } else {
+            console.log('⚠️ Could not find matching product for user choice:', productChoiceAnswer.answer_text);
+            if (selectedProductError) {
+              console.log('Error details:', selectedProductError);
+            }
+          }
+        }
+      }
+      
+      // Replace placeholders with the user's selected product information
+      if (userSelectedProduct) {
+        finalPrompt = finalPrompt
+          .replace(/##product_title##/g, userSelectedProduct.title || '')
+          .replace(/##product_subtitle##/g, userSelectedProduct.subtitle || '')
+          .replace(/##description##/g, userSelectedProduct.description || '');
+        
+        console.log('✅ Replaced product placeholders with user selection:');
+        console.log('  - ##product_title## →', userSelectedProduct.title);
+        console.log('  - ##product_subtitle## →', userSelectedProduct.subtitle);
+        console.log('  - ##description## →', userSelectedProduct.description);
+      } else {
+        // Fallback: replace with empty strings if no product found
+        finalPrompt = finalPrompt
+          .replace(/##product_title##/g, '')
+          .replace(/##product_subtitle##/g, '')
+          .replace(/##description##/g, '');
+        
+        console.log('⚠️ No user product selection found, replaced placeholders with empty strings');
+      }
+      
+      // For general_default_hidden products, also look for the user's product choice
+      // from the "What product are you interested in?" question
+      if (previousAnswers && previousAnswers.length > 0) {
+        // First, try to find a more specific product choice question
+        let productChoiceQuestion = previousAnswers.find(answer => {
+          // Look for answers that might be from the "What product are you interested in?" question
+          // Check if the question text contains product-related keywords
+          return answer.answer_text && (
+            answer.answer_text.toLowerCase().includes('product') ||
+            answer.answer_text.toLowerCase().includes('interested') ||
+            answer.answer_text.toLowerCase().includes('design') ||
+            answer.answer_text.toLowerCase().includes('sticker') ||
+            answer.answer_text.toLowerCase().includes('custom')
+          );
+        });
+        
+        if (productChoiceQuestion) {
+          console.log('✅ Found product choice answer:', productChoiceQuestion.answer_text);
+          // Add the user's product choice to the prompt context
+          finalPrompt = finalPrompt
+            .replace(/##user_product_choice##/g, productChoiceQuestion.answer_text)
+            .replace(/##product_context##/g, `The user is interested in: ${productChoiceQuestion.answer_text}`)
+            .replace(/##design_context##/g, `Design context: The user wants to create ${productChoiceQuestion.answer_text}`);
+          
+          console.log('🔍 Added product context to prompt. Available placeholders:');
+          console.log('  - ##user_product_choice## →', productChoiceQuestion.answer_text);
+          console.log('  - ##product_context## → The user is interested in:', productChoiceQuestion.answer_text);
+          console.log('  - ##design_context## → Design context: The user wants to create', productChoiceQuestion.answer_text);
+        } else {
+          console.log('⚠️ No specific product choice found in previous answers');
+        }
+      }
     }
 
     // Replace answer placeholders
@@ -241,6 +336,22 @@ export async function POST(request: NextRequest) {
 
     console.log('🚀 Calling Gemini API with prompt length:', finalPrompt.length);
     
+    // Record start time for latency calculation
+    const apiCallStartTime = Date.now();
+
+    // Prepare the request payload for Gemini API
+    const geminiRequestPayload = {
+      contents: [
+        {
+          parts: [
+            {
+              text: finalPrompt
+            }
+          ]
+        }
+      ]
+    };
+    
     const geminiResponse = await fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
       {
@@ -248,21 +359,14 @@ export async function POST(request: NextRequest) {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          contents: [
-            {
-              parts: [
-                {
-                  text: finalPrompt
-                }
-              ]
-            }
-          ]
-        })
+        body: JSON.stringify(geminiRequestPayload)
       }
     );
 
     console.log('🔍 Gemini API response status:', geminiResponse.status, geminiResponse.statusText);
+    const apiCallEndTime = Date.now();
+    const apiLatencyMs = apiCallEndTime - apiCallStartTime;
+    console.log('⏱️ Gemini API latency (ms):', apiLatencyMs);
 
     if (!geminiResponse.ok) {
       const errorData = await geminiResponse.text();
@@ -291,6 +395,124 @@ export async function POST(request: NextRequest) {
     }
 
     const geminiData = await geminiResponse.json();
+    
+    // Build raw input/output logs for storage without parsing
+    const inputLog = {
+      model: 'gemini-2.0-flash',
+      api_endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+      request_payload: geminiRequestPayload,
+      prompt_length: finalPrompt.length,
+      timestamp: new Date().toISOString()
+    } as const;
+
+    const outputLog = {
+      status: geminiResponse.status,
+      status_text: geminiResponse.statusText,
+      headers: Object.fromEntries(geminiResponse.headers.entries()),
+      latency_ms: apiLatencyMs,
+      raw_response: geminiData,
+      timestamp: new Date().toISOString()
+    } as const;
+    
+    // Extract input metadata for logging
+    const inputMetadata = {
+      request_payload: geminiRequestPayload,
+      model: 'gemini-2.0-flash',
+      api_endpoint: 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent',
+      prompt_length: finalPrompt.length,
+      question_details: {
+        question_id: questionId,
+        question_text: question.question_text,
+        is_ai_generated: question.is_ai_generated,
+        has_prompt: !!question.ai_generated_prompt,
+        structured_output_schema: question.ai_structured_output,
+        prompt_placeholders: question.ai_prompt_placeholder
+      },
+      product_details: {
+        product_id: designRequest.product_id,
+        slug: product.slug,
+        title: product.title,
+        subtitle: product.subtitle
+      },
+      placeholder_replacements: {
+        product_title_replaced: product.slug === 'general_default_hidden',
+        answer_placeholders_processed: !!question.ai_prompt_placeholder && (previousAnswers?.length || 0) > 0,
+        product_context_added: product.slug === 'general_default_hidden' && (() => {
+          if (previousAnswers && previousAnswers.length > 0) {
+            const productChoiceQuestion = previousAnswers.find(answer => {
+              return answer.answer_text && (
+                answer.answer_text.toLowerCase().includes('product') ||
+                answer.answer_text.toLowerCase().includes('interested') ||
+                answer.answer_text.toLowerCase().includes('design') ||
+                answer.answer_text.toLowerCase().includes('sticker') ||
+                answer.answer_text.toLowerCase().includes('custom')
+              );
+            });
+            return !!productChoiceQuestion;
+          }
+          return false;
+        })(),
+        available_placeholders: product.slug === 'general_default_hidden' ? [
+          '##user_product_choice##',
+          '##product_context##', 
+          '##design_context##'
+        ] : [],
+        user_selected_product: (() => {
+          if (product.slug === 'general_default_hidden' && previousAnswers && previousAnswers.length > 0) {
+            const productChoiceAnswer = previousAnswers.find(answer => 
+              answer.question_id === '200ad2dc-bf2d-45c6-8aa7-1e0339a7f589'
+            );
+            if (productChoiceAnswer && productChoiceAnswer.answer_text) {
+              return {
+                question_id: productChoiceAnswer.question_id,
+                answer_text: productChoiceAnswer.answer_text,
+                found_in_products_table: true, // This will be updated after the product lookup
+                matched_product: null as any // This will be updated after the product lookup
+              };
+            }
+          }
+          return null;
+        })(),
+        actual_replacements: (() => {
+          if (product.slug === 'general_default_hidden') {
+            return {
+              product_title: '##product_title##',
+              product_subtitle: '##product_subtitle##',
+              description: '##description##'
+            };
+          }
+          return null;
+        })()
+      },
+      timestamp: new Date().toISOString()
+    };
+    
+    // Update the metadata to reflect the actual placeholder replacements that were made
+    if (product.slug === 'general_default_hidden' && inputMetadata.placeholder_replacements.actual_replacements) {
+      if (userSelectedProduct) {
+        inputMetadata.placeholder_replacements.actual_replacements.product_title = userSelectedProduct.title || '';
+        inputMetadata.placeholder_replacements.actual_replacements.product_subtitle = userSelectedProduct.subtitle || '';
+        inputMetadata.placeholder_replacements.actual_replacements.description = userSelectedProduct.description || '';
+        
+        if (inputMetadata.placeholder_replacements.user_selected_product) {
+          inputMetadata.placeholder_replacements.user_selected_product.found_in_products_table = true;
+          inputMetadata.placeholder_replacements.user_selected_product.matched_product = {
+            id: userSelectedProduct.id,
+            slug: userSelectedProduct.slug,
+            title: userSelectedProduct.title,
+            subtitle: userSelectedProduct.subtitle
+          };
+        }
+      } else {
+        inputMetadata.placeholder_replacements.actual_replacements.product_title = '';
+        inputMetadata.placeholder_replacements.actual_replacements.product_subtitle = '';
+        inputMetadata.placeholder_replacements.actual_replacements.description = '';
+        
+        if (inputMetadata.placeholder_replacements.user_selected_product) {
+          inputMetadata.placeholder_replacements.user_selected_product.found_in_products_table = false;
+        }
+      }
+    }
     
     // Parse the response based on the structured output schema
     let parsedResponse;
@@ -362,15 +584,61 @@ export async function POST(request: NextRequest) {
       console.log('✅ Using error fallback response');
     }
 
-    // Log the Gemini run
+    // Extract output metadata for logging (after response parsing is complete)
+    const outputMetadata = {
+      response_status: geminiResponse.status,
+      response_headers: Object.fromEntries(geminiResponse.headers.entries()),
+      response_timestamp: new Date().toISOString(),
+      model_response: {
+        candidates_count: geminiData.candidates?.length || 0,
+        has_content: !!geminiData.candidates?.[0]?.content,
+        content_parts_count: geminiData.candidates?.[0]?.content?.parts?.length || 0,
+        response_length: geminiData.candidates?.[0]?.content?.parts?.[0]?.text?.length || 0
+      },
+      // Extract any additional metadata from Gemini response if available
+      gemini_metadata: {
+        promptFeedback: geminiData.promptFeedback || null,
+        usageMetadata: geminiData.usageMetadata || null,
+        safetyRatings: geminiData.candidates?.[0]?.safetyRatings || null,
+        finishReason: geminiData.candidates?.[0]?.finishReason || null,
+        index: geminiData.candidates?.[0]?.index || null
+      },
+      // Additional response analysis
+      response_analysis: {
+        parsing_success: !!parsedResponse,
+        has_text_content: !!parsedResponse?.text,
+        has_placeholders: !!parsedResponse?.placeholders,
+        text_length: parsedResponse?.text?.length || 0,
+        placeholders_count: parsedResponse?.placeholders?.length || 0
+      },
+      // Include latency in metadata for convenience
+      performance: {
+        api_latency_ms: apiLatencyMs
+      }
+    };
+
+    // Log the Gemini run with enhanced metadata
+    console.log('🔍 Logging Gemini run with enhanced metadata:', {
+      inputMetadata: inputMetadata,
+      outputMetadata: outputMetadata
+    });
+    
     const { data: geminiRun, error: logError } = await supabase
       .from('gemini_runs')
       .insert({
         request_id: requestId,
         question_id: questionId,
         prompt: finalPrompt,
-        response: parsedResponse,
+        // Store the full raw Gemini response JSON as requested
+        response: geminiData,
         metadata: {
+          // Store whole input/output logs (raw) for auditing
+          input_log: inputLog,
+          output_log: outputLog,
+          // Keep existing structured metadata for convenience/analytics
+          input_metadata: inputMetadata,
+          output_metadata: outputMetadata,
+          // Backward compatibility fields
           product_slug: product.slug,
           question_text: question.question_text,
           original_prompt: question.ai_generated_prompt,
@@ -387,7 +655,9 @@ export async function POST(request: NextRequest) {
 
     console.log('✅ AI inspiration generated successfully:', {
       response: parsedResponse,
-      geminiRunId: geminiRun?.id
+      geminiRunId: geminiRun?.id,
+      inputMetadata: inputMetadata,
+      outputMetadata: outputMetadata
     });
     
     return NextResponse.json({

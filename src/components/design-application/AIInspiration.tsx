@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 
 interface AIInspirationProps {
@@ -25,6 +25,16 @@ export default function AIInspiration({
   
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [showTooltip, setShowTooltip] = useState(true);
+
+  // Auto-hide tooltip after 5 seconds when component mounts
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setShowTooltip(false);
+    }, 3000);
+    
+    return () => clearTimeout(timer);
+  }, []);
 
 
   const handleGetInspiration = async () => {
@@ -100,6 +110,12 @@ export default function AIInspiration({
             <span className="ai-icon-inline">✨</span>
           )}
         </button>
+        
+        {showTooltip && (
+          <div className="ai-tooltip">
+            Get the inspiration from AI!
+          </div>
+        )}
         
         {error && (
           <div className="ai-error-inline">

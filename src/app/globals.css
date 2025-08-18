@@ -2770,6 +2770,7 @@ img { display: block; max-width: 100%; height: auto; }
   font-size: 14px;
   color: var(--muted-ink);
   margin-top: 8px;
+  /* width: 300px; */
 }
 
 /* Quiz multiple-choice options */
@@ -4286,7 +4287,7 @@ img { display: block; max-width: 100%; height: auto; }
      position: absolute;
      top: 3rem;
      right: -0.5rem;
-     z-index: 10;
+     z-index: 20;
    }
 
              .ai-inspiration-btn-inline {
@@ -4371,11 +4372,54 @@ img { display: block; max-width: 100%; height: auto; }
         0 0 0 4px rgba(139, 92, 246, 0.3);
     }
 
-    .ai-inspiration-btn-inline:focus:not(:focus-visible) {
-      box-shadow: 
-        0 4px 15px rgba(139, 92, 246, 0.4),
-        0 0 0 0 rgba(139, 92, 246, 0.7);
-    }
+       .ai-inspiration-btn-inline:focus:not(:focus-visible) {
+     box-shadow: 
+       0 4px 15px rgba(139, 92, 246, 0.4),
+       0 0 0 0 rgba(139, 92, 246, 0.7);
+   }
+
+   /* AI Tooltip Styles */
+   .ai-tooltip {
+     position: absolute;
+     top: -3.5rem;
+     right: -0.5rem;
+     background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+     color: white;
+     padding: 0.75rem 1rem;
+     border-radius: 0.75rem;
+     font-size: 0.875rem;
+     font-weight: 500;
+     white-space: nowrap;
+     box-shadow: 
+       0 8px 25px rgba(0, 0, 0, 0.3),
+       0 4px 10px rgba(0, 0, 0, 0.2);
+     z-index: 30;
+     animation: tooltip-fade-in 0.3s ease-out;
+     border: 2px solid rgba(139, 92, 246, 0.3);
+   }
+
+   .ai-tooltip::after {
+     content: '';
+     position: absolute;
+     bottom: -0.5rem;
+     right: 1.5rem;
+     width: 0;
+     height: 0;
+     border-left: 0.5rem solid transparent;
+     border-right: 0.5rem solid transparent;
+     border-top: 0.5rem solid #1e293b;
+   }
+
+   @keyframes tooltip-fade-in {
+     0% {
+       opacity: 0;
+       transform: translateY(10px) scale(0.9);
+     }
+     100% {
+       opacity: 1;
+       transform: translateY(0) scale(1);
+     }
+   }
 
    .ai-inspiration-btn-inline:disabled {
      opacity: 0.6;

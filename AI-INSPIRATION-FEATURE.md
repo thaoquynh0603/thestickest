@@ -19,6 +19,12 @@ For products with `slug = 'general_default_hidden'`:
 - `##product_subtitle##` → Product subtitle  
 - `##description##` → Product description
 
+#### Enhanced Product Context for General Products
+For `general_default_hidden` products, the system automatically detects user's product choice from previous answers and adds:
+- `##user_product_choice##` → The specific product/design the user is interested in
+- `##product_context##` → Context about what the user wants to create
+- `##design_context##` → Design-specific context for the AI
+
 #### Answer Placeholder Replacement
 Uses the `ai_prompt_placeholder` JSON configuration to replace placeholders with previous answers:
 ```json
@@ -57,137 +63,66 @@ CREATE TABLE gemini_runs (
   question_id UUID REFERENCES request_questions(id) ON DELETE CASCADE,
   prompt TEXT NOT NULL,
   response JSONB NOT NULL,
-  created_at TIMESTAMPTZ DEFAULT NOW(),
-  created_by TEXT,
-  metadata JSONB DEFAULT '{}'::jsonb
+  metadata JSONB,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
 ```
 
-### Updated Tables
+### Enhanced Fields
 
 #### `request_questions` - New AI Fields
-- `is_ai_generated` (boolean): Whether the question supports AI generation
-- `ai_generated_prompt` (text): The base prompt template
-- `ai_structured_output` (text): Expected response structure
-- `ai_prompt_placeholder` (jsonb): Placeholder configuration for answer replacement
+- `is_ai_generated` (boolean): Whether this question supports AI generation
+- `ai_generated_prompt` (text): The base prompt template with placeholders
+- `ai_structured_output` (text): JSON schema for structured AI responses
+- `ai_prompt_placeholder` (jsonb): Configuration for answer-based placeholder replacement
 
-#### `design_request_answers_history` - New Field
-- `ai_generated_id` (uuid): Reference to the gemini_run that generated this answer
+#### `design_request_answers_history` - New AI Fields
+- `ai_generated_id` (UUID): Links to the gemini_runs table when AI was used
 
-## API Endpoints
+## Usage Examples
 
-### POST `/api/ai-inspiration`
-Generates AI inspiration for a specific question.
+### Basic Product Context Prompt
+For `general_default_hidden` products, you can use these placeholders in your AI prompts:
 
-**Request Body:**
-```json
-{
-  "questionId": "uuid",
-  "requestId": "uuid"
-}
+```
+You are a creative design consultant. The user is interested in ##user_product_choice##.
+
+Product details:
+- Title: ##product_title##
+- Subtitle: ##product_subtitle##
+- Description: ##description##
+
+##product_context##
+
+Please provide design inspiration and suggestions for ##design_context##.
 ```
 
-**Response:**
+### Answer-Based Placeholder Example
 ```json
-{
-  "success": true,
-  "response": {
-    "text": "AI generated suggestion with {{placeholder}}",
-    "placeholders": ["placeholder"]
-  },
-  "geminiRunId": "uuid"
-}
-```
-
-## Components
-
-### AIInspiration Component
-Located at `src/components/design-application/AIInspiration.tsx`
-
-**Features:**
-- "Get AI Inspiration!" button with loading states
-- Error handling and display
-- Generated content display with placeholder highlighting
-- Automatic textarea population
-
-**Props:**
-- `questionId`: The question ID to generate inspiration for
-- `requestId`: The design request ID
-- `onInspirationGenerated`: Callback when AI content is generated
-- `isGenerating`: Whether the parent is currently generating content
-
-## Integration
-
-### QuestionRenderer Integration
-The AI Inspiration component is automatically integrated into textarea fields in the QuestionRenderer:
-
-```tsx
-case 'textarea': {
-  const textareaElement = (
-    <textarea 
-      value={typeof value === 'string' ? value : ''} 
-      onChange={(e) => updateApplicationData(question.id, e.target.value)} 
-      className="form-textarea" 
-      placeholder="Enter your answer..." 
-      rows={4} 
-      required={question.is_required} 
-      onKeyPress={onTextareaKeyPress} 
-    />
-  );
-
-  // Show AI inspiration for textarea fields that support it
-  if (question.is_ai_generated) {
-    return (
-      <div>
-        {textareaElement}
-        <AIInspiration
-          questionId={question.id}
-          requestId={applicationId}
-          onInspirationGenerated={handleAIInspiration}
-        />
-      </div>
-    );
+[{
+  "##design_details##": {
+    "question_id": [],
+    "question_text": ["What do you want to design?", "Describe your design idea"]
   }
-
-  return textareaElement;
-}
+}]
 ```
 
-## Environment Variables
+## Implementation Notes
 
-Required environment variables:
+### Automatic Product Context Detection
+The system automatically detects when a user has answered questions about their product interests and injects this context into AI prompts. This works by:
 
-```bash
-GEMINI_API_KEY=your_gemini_api_key_here
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here
-```
+1. Identifying `general_default_hidden` products
+2. Scanning previous answers for product-related keywords
+3. Adding contextual placeholders to the prompt
+4. Logging the enhanced context for debugging
 
-## Security
+### Placeholder Priority
+1. Product information placeholders (##product_title##, etc.)
+2. User product choice context (##user_product_choice##, ##product_context##, ##design_context##)
+3. Answer-based placeholders from ai_prompt_placeholder configuration
 
-- Row Level Security (RLS) enabled on the `gemini_runs` table
-- Users can only view and create gemini runs for their own design requests
-- API endpoint validates request ownership before processing
-
-## Usage Example
-
-1. **User fills out initial questions** (e.g., "What product are you interested in?")
-2. **User reaches AI-enabled textarea** (e.g., "What do you want to design?")
-3. **User clicks "Get AI Inspiration!"**
-4. **System generates contextual suggestion** based on previous answers and product details
-5. **Suggestion auto-fills the textarea** with highlighted placeholders
-6. **User can customize** the generated text as needed
-
-## Error Handling
-
-- Graceful fallback if Gemini API is unavailable
-- User-friendly error messages for common issues
-- Logging of all errors for debugging
-- Non-blocking operation (AI failure doesn't prevent form submission)
-
-## Future Enhancements
-
-- Support for multiple AI models
-- Caching of common AI responses
-- A/B testing of different prompt strategies
-- Analytics on AI usage and effectiveness
-- User feedback collection on AI suggestions
+### Debugging and Monitoring
+- All placeholder replacements are logged with detailed context
+- Metadata includes information about which placeholders were successfully replaced
+- Failed placeholder replacements don't break the AI generation process
