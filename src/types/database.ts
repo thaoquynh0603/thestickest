@@ -692,6 +692,7 @@ export type Database = {
         }
         Relationships: []
       }
+
       payment_events: {
         Row: {
           amount: number | null
@@ -983,51 +984,7 @@ export type Database = {
           },
         ]
       }
-      payment_tracking_analytics: {
-        Row: {
-          created_at: string
-          date: string
-          payment_date: string
-          failed_payments: number
-          net_revenue: number
-          successful_payments: number
-          total_applications: number
-          total_fees: number
-          total_revenue: number
-          updated_at: string | null
-        }
-        Relationships: []
-      }
-      payment_tracking: {
-        Row: {
-          request_id: string | null
-          payment_amount: number | null
-          payment_confirmed_at: string | null
-          payment_currency: string | null
-          payment_status: string | null
-          stripe_payment_intent_id?: string | null
-          stripe_charge_id?: string | null
-          stripe_receipt_url?: string | null
-          payment_created_at?: string | null
-          payment_failed_at?: string | null
-          discount_code_applied?: string | null
-          discount_amount?: number | null
-          processing_fee_amount?: number | null
-          failure_reason?: string | null
-          failure_code?: string | null
-          discount_code: string | null
-          net_amount: number | null
-          design_requests?: {
-            design_code: string | null
-            email: string | null
-            product_id: string | null
-            status: string | null
-          }
-          created_at?: string | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
+
     }
     Functions: {
       add_design_request_answer_history: {
@@ -1090,19 +1047,7 @@ export type Database = {
           net_amount: number | null
         }[]
       }
-      get_request_payment_summary: {
-        Args: { p_request_id: string }
-        Returns: {
-          has_paid: boolean
-          payment_status: string | null
-          payment_amount: number | null
-          payment_currency: string | null
-          stripe_payment_intent_id?: string | null
-          payment_confirmed_at?: string | null
-          discount_applied?: string | null
-          net_amount?: number | null
-        }[]
-      }
+
       get_product_by_slug: {
         Args: { product_slug: string }
         Returns: {
