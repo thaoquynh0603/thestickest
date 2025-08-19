@@ -93,6 +93,7 @@ export async function GET(request: NextRequest) {
     const paymentsByDate = new Map();
 
     allRequests?.forEach(request => {
+      if (!request || !request.created_at) return; // skip malformed entries
       const date = request.created_at.split('T')[0];
       if (!requestsByDate.has(date)) {
         requestsByDate.set(date, { requests: 0, paid: 0, revenue: 0 });
@@ -101,6 +102,7 @@ export async function GET(request: NextRequest) {
     });
 
     paidRequests?.forEach(payment => {
+      if (!payment || !payment.payment_confirmed_at) return; // skip if no confirmed date
       const date = payment.payment_confirmed_at.split('T')[0];
       if (!paymentsByDate.has(date)) {
         paymentsByDate.set(date, { requests: 0, paid: 0, revenue: 0 });
@@ -125,8 +127,8 @@ export async function GET(request: NextRequest) {
       };
     }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
 
-    // Prepare response data
-    const response = {
+  // Prepare response data
+  const response: any = {
       period,
       dateRange: {
         start: startDate.toISOString(),
@@ -146,13 +148,14 @@ export async function GET(request: NextRequest) {
         requestId: req.request_id,
         designCode: req.design_code,
         email: req.email,
-        paymentAmount: req.payment_amount / 100,
+        paymentAmount: (req.payment_amount ?? 0) / 100,
         paymentCurrency: req.payment_currency,
         paymentConfirmedAt: req.payment_confirmed_at,
         discountCode: req.discount_code,
-        netAmount: req.net_amount / 100
+        netAmount: (req.net_amount ?? 0) / 100
       })) || [],
-      paymentAnalytics: paymentAnalytics || [],
+  paymentAnalytics: paymentAnalytics || [],
+  unpaidRequests: [],
       insights: {
         topPerformingDays: dailyTrends
           .filter(day => day.conversionRate > 0)

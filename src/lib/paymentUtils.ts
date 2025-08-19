@@ -52,13 +52,13 @@ export async function checkPaymentStatusByRequestId(requestId: string): Promise<
     const summary = data[0];
     return {
       hasPaid: summary.has_paid,
-      paymentStatus: summary.payment_status,
-      paymentAmount: summary.payment_amount ? summary.payment_amount / 100 : undefined,
-      paymentCurrency: summary.payment_currency,
-      stripePaymentIntentId: summary.stripe_payment_intent_id,
-      paymentConfirmedAt: summary.payment_confirmed_at,
-      discountApplied: summary.discount_applied,
-      netAmount: summary.net_amount ? summary.net_amount / 100 : undefined,
+  paymentStatus: summary.payment_status ?? 'unknown',
+  paymentAmount: summary.payment_amount ? summary.payment_amount / 100 : undefined,
+  paymentCurrency: summary.payment_currency ?? undefined,
+  stripePaymentIntentId: summary.stripe_payment_intent_id ?? undefined,
+  paymentConfirmedAt: summary.payment_confirmed_at ?? undefined,
+  discountApplied: summary.discount_applied ?? undefined,
+  netAmount: summary.net_amount ? summary.net_amount / 100 : undefined,
       message: summary.has_paid ? 'Payment confirmed' : `Payment status: ${summary.payment_status}`
     };
   } catch (error) {
@@ -119,27 +119,27 @@ export async function getPaymentDetails(requestId: string): Promise<PaymentDetai
 
     return {
       hasPaid: payment.payment_status === 'succeeded',
-      paymentStatus: payment.payment_status,
-      paymentAmount: payment.payment_amount / 100,
-      paymentCurrency: payment.payment_currency,
-      stripePaymentIntentId: payment.stripe_payment_intent_id,
-      paymentConfirmedAt: payment.payment_confirmed_at,
-      discountApplied: payment.discount_code_applied,
-      netAmount: payment.net_amount / 100,
-      stripeChargeId: payment.stripe_charge_id,
-      stripeReceiptUrl: payment.stripe_receipt_url,
-      paymentCreatedAt: payment.payment_created_at,
-      paymentFailedAt: payment.payment_failed_at,
-      discountCode: payment.discount_code_applied,
-      discountAmount: payment.discount_amount / 100,
-      processingFee: payment.processing_fee_amount / 100,
-      failureReason: payment.failure_reason,
-      failureCode: payment.failure_code,
-      designCode: designRequest.design_code,
-      email: designRequest.email,
-      productId: designRequest.product_id,
-      requestStatus: designRequest.status,
-      message: payment.payment_status === 'succeeded' ? 'Payment confirmed' : `Payment status: ${payment.payment_status}`
+      paymentStatus: payment.payment_status ?? 'unknown',
+      paymentAmount: payment.payment_amount ? payment.payment_amount / 100 : undefined,
+      paymentCurrency: payment.payment_currency ?? undefined,
+      stripePaymentIntentId: payment.stripe_payment_intent_id ?? undefined,
+      paymentConfirmedAt: payment.payment_confirmed_at ?? undefined,
+      discountApplied: payment.discount_code_applied ?? undefined,
+      netAmount: payment.net_amount ? payment.net_amount / 100 : undefined,
+      stripeChargeId: payment.stripe_charge_id ?? undefined,
+      stripeReceiptUrl: payment.stripe_receipt_url ?? undefined,
+      paymentCreatedAt: payment.payment_created_at ?? undefined,
+      paymentFailedAt: payment.payment_failed_at ?? undefined,
+      discountCode: payment.discount_code_applied ?? undefined,
+      discountAmount: payment.discount_amount ? payment.discount_amount / 100 : undefined,
+      processingFee: payment.processing_fee_amount ? payment.processing_fee_amount / 100 : undefined,
+      failureReason: payment.failure_reason ?? undefined,
+      failureCode: payment.failure_code ?? undefined,
+      designCode: designRequest?.design_code ?? undefined,
+      email: designRequest?.email ?? undefined,
+      productId: designRequest?.product_id ?? undefined,
+      requestStatus: designRequest?.status ?? undefined,
+      message: payment.payment_status === 'succeeded' ? 'Payment confirmed' : `Payment status: ${payment.payment_status ?? 'unknown'}`
     };
   } catch (error) {
     console.error('Error in getPaymentDetails:', error);

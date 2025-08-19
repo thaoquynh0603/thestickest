@@ -14,98 +14,6 @@ export type Database = {
   }
   public: {
     Tables: {
-      payment_tracking: {
-        Row: {
-          id: string
-          request_id: string
-          stripe_payment_intent_id: string
-          stripe_customer_id: string | null
-          payment_amount: number
-          payment_currency: string
-          payment_status: string
-          payment_method: string | null
-          payment_method_details: Json | null
-          stripe_charge_id: string | null
-          stripe_receipt_url: string | null
-          stripe_application_fee_amount: number | null
-          stripe_transfer_data: Json | null
-          discount_code_applied: string | null
-          discount_amount: number
-          net_amount: number
-          processing_fee_amount: number
-          payment_created_at: string
-          payment_confirmed_at: string | null
-          payment_failed_at: string | null
-          created_at: string
-          updated_at: string
-          created_by: string | null
-          failure_reason: string | null
-          failure_code: string | null
-        }
-        Insert: {
-          id?: string
-          request_id: string
-          stripe_payment_intent_id: string
-          stripe_customer_id?: string | null
-          payment_amount: number
-          payment_currency?: string
-          payment_status?: string
-          payment_method?: string | null
-          payment_method_details?: Json | null
-          stripe_charge_id?: string | null
-          stripe_receipt_url?: string | null
-          stripe_application_fee_amount?: number | null
-          stripe_transfer_data?: Json | null
-          discount_code_applied?: string | null
-          discount_amount?: number
-          net_amount?: number
-          processing_fee_amount?: number
-          payment_created_at?: string
-          payment_confirmed_at?: string | null
-          payment_failed_at?: string | null
-          created_at?: string
-          updated_at?: string
-          created_by?: string | null
-          failure_reason?: string | null
-          failure_code?: string | null
-        }
-        Update: {
-          id?: string
-          request_id?: string
-          stripe_payment_intent_id?: string
-          stripe_customer_id?: string | null
-          payment_amount?: number
-          payment_currency?: string
-          payment_status?: string
-          payment_method?: string | null
-          payment_method_details?: Json | null
-          stripe_charge_id?: string | null
-          stripe_receipt_url?: string | null
-          stripe_application_fee_amount?: number | null
-          stripe_transfer_data?: Json | null
-          discount_code_applied?: string | null
-          discount_amount?: number
-          net_amount?: number
-          processing_fee_amount?: number
-          payment_created_at?: string
-          payment_confirmed_at?: string | null
-          payment_failed_at?: string | null
-          created_at?: string
-          updated_at?: string
-          created_by?: string | null
-          failure_reason?: string | null
-          failure_code?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "payment_tracking_request_id_fkey"
-            columns: ["request_id"]
-            isOneToOne: false
-            referencedRelation: "design_requests"
-            referencedColumns: ["id"]
-          }
-        ]
-      }
       carousel_items: {
         Row: {
           created_at: string | null
@@ -1075,6 +983,51 @@ export type Database = {
           },
         ]
       }
+      payment_tracking_analytics: {
+        Row: {
+          created_at: string
+          date: string
+          payment_date: string
+          failed_payments: number
+          net_revenue: number
+          successful_payments: number
+          total_applications: number
+          total_fees: number
+          total_revenue: number
+          updated_at: string | null
+        }
+        Relationships: []
+      }
+      payment_tracking: {
+        Row: {
+          request_id: string | null
+          payment_amount: number | null
+          payment_confirmed_at: string | null
+          payment_currency: string | null
+          payment_status: string | null
+          stripe_payment_intent_id?: string | null
+          stripe_charge_id?: string | null
+          stripe_receipt_url?: string | null
+          payment_created_at?: string | null
+          payment_failed_at?: string | null
+          discount_code_applied?: string | null
+          discount_amount?: number | null
+          processing_fee_amount?: number | null
+          failure_reason?: string | null
+          failure_code?: string | null
+          discount_code: string | null
+          net_amount: number | null
+          design_requests?: {
+            design_code: string | null
+            email: string | null
+            product_id: string | null
+            status: string | null
+          }
+          created_at?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       add_design_request_answer_history: {
@@ -1118,6 +1071,36 @@ export type Database = {
           total_fees: number
           total_revenue: number
           updated_at: string
+        }[]
+      }
+      get_paid_requests: {
+        Args: {
+          p_start_date: string
+          p_end_date: string
+        }
+        Returns: {
+          request_id: string
+          design_code: string | null
+          email: string | null
+          payment_amount: number | null
+          payment_currency: string | null
+          payment_confirmed_at: string | null
+          discount_code: string | null
+          discount_amount?: number | null
+          net_amount: number | null
+        }[]
+      }
+      get_request_payment_summary: {
+        Args: { p_request_id: string }
+        Returns: {
+          has_paid: boolean
+          payment_status: string | null
+          payment_amount: number | null
+          payment_currency: string | null
+          stripe_payment_intent_id?: string | null
+          payment_confirmed_at?: string | null
+          discount_applied?: string | null
+          net_amount?: number | null
         }[]
       }
       get_product_by_slug: {
