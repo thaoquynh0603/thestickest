@@ -98,6 +98,7 @@ export async function POST(request: NextRequest) {
         discount_code: discountCode || '',
         discount_amount: validatedDiscountAmount ? (validatedDiscountAmount * 100).toString() : '',
         final_amount: finalAmountDollars.toString(),
+        payment_type: 'stripe_payment_intent', // Distinguish from zero-amount payments
       },
       description: `Design request - ${(requestData || baseRequest).design_code}${discountCode ? ` (Discount: ${discountCode})` : ''}`,
       // Only include receipt_email if a non-empty, likely valid email is provided

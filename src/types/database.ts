@@ -14,6 +14,98 @@ export type Database = {
   }
   public: {
     Tables: {
+      payment_tracking: {
+        Row: {
+          id: string
+          request_id: string
+          stripe_payment_intent_id: string
+          stripe_customer_id: string | null
+          payment_amount: number
+          payment_currency: string
+          payment_status: string
+          payment_method: string | null
+          payment_method_details: Json | null
+          stripe_charge_id: string | null
+          stripe_receipt_url: string | null
+          stripe_application_fee_amount: number | null
+          stripe_transfer_data: Json | null
+          discount_code_applied: string | null
+          discount_amount: number
+          net_amount: number
+          processing_fee_amount: number
+          payment_created_at: string
+          payment_confirmed_at: string | null
+          payment_failed_at: string | null
+          created_at: string
+          updated_at: string
+          created_by: string | null
+          failure_reason: string | null
+          failure_code: string | null
+        }
+        Insert: {
+          id?: string
+          request_id: string
+          stripe_payment_intent_id: string
+          stripe_customer_id?: string | null
+          payment_amount: number
+          payment_currency?: string
+          payment_status?: string
+          payment_method?: string | null
+          payment_method_details?: Json | null
+          stripe_charge_id?: string | null
+          stripe_receipt_url?: string | null
+          stripe_application_fee_amount?: number | null
+          stripe_transfer_data?: Json | null
+          discount_code_applied?: string | null
+          discount_amount?: number
+          net_amount?: number
+          processing_fee_amount?: number
+          payment_created_at?: string
+          payment_confirmed_at?: string | null
+          payment_failed_at?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          failure_reason?: string | null
+          failure_code?: string | null
+        }
+        Update: {
+          id?: string
+          request_id?: string
+          stripe_payment_intent_id?: string
+          stripe_customer_id?: string | null
+          payment_amount?: number
+          payment_currency?: string
+          payment_status?: string
+          payment_method?: string | null
+          payment_method_details?: Json | null
+          stripe_charge_id?: string | null
+          stripe_receipt_url?: string | null
+          stripe_application_fee_amount?: number | null
+          stripe_transfer_data?: Json | null
+          discount_code_applied?: string | null
+          discount_amount?: number
+          net_amount?: number
+          processing_fee_amount?: number
+          payment_created_at?: string
+          payment_confirmed_at?: string | null
+          payment_failed_at?: string | null
+          created_at?: string
+          updated_at?: string
+          created_by?: string | null
+          failure_reason?: string | null
+          failure_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_tracking_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "design_requests"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
       carousel_items: {
         Row: {
           created_at: string | null

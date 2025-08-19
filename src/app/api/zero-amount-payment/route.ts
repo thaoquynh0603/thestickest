@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
         discount_amount: discountAmount || 0,
         currency: 'AUD',
         payment_method: 'zero_amount',
+        payment_type: 'zero_amount_discount', // Clearly identify zero-amount payments
       },
       p_created_by: email || 'system',
       p_metadata: { design_code: designCode, discount_applied: !!discountCode },

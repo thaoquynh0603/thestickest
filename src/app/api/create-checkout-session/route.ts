@@ -103,26 +103,71 @@ export async function POST(request: NextRequest) {
         discount_code: discountCode || '',
         discount_amount: validatedDiscountAmount ? (validatedDiscountAmount * 100).toString() : '',
         final_amount: finalAmountDollars.toString(),
+        payment_type: 'stripe_checkout', // Distinguish from zero-amount payments
+      },
+      // Add this to ensure metadata transfers to payment intent
+      payment_intent_data: {
+        metadata: {
+          request_id: applicationId,
+          application_id: applicationId,
+          design_code: designCode,
+          product_id: (requestData || baseRequest).product_id || '',
+          original_amount: (baseAmount * 100).toString(),
+          discount_code: discountCode || '',
+          discount_amount: validatedDiscountAmount ? (validatedDiscountAmount * 100).toString() : '',
+          final_amount: finalAmountDollars.toString(),
+          payment_type: 'stripe_checkout', // Distinguish from zero-amount payments
+        },
       },
     });
 
-    // Record event
-    await supabase.rpc('add_design_request_event', {
-      p_request_id: applicationId,
-      p_event_type: 'CHECKOUT_SESSION_CREATED',
-      p_event_data: {
-        checkout_session_id: session.id,
-        amount: finalAmountDollars,
-        original_amount: baseAmount,
-        discount_code: discountCode,
-        discount_amount: validatedDiscountAmount,
-      },
-      p_created_by: email || null,
-      p_metadata: {
+    // Record event directly instead of using the problematic function
+    const { error: eventError } = await supabase
+      .from('design_request_events')
+      .insert({
+        request_id: applicationId,
+        event_type: 'PAYMENT_INTENT_CREATED',
+        event_data: {
+          stripe_payment_intent_id: session.id,
+          amount: finalAmountDollars,
+          original_amount: baseAmount,
+          discount_code: discountCode,
+          discount_amount: validatedDiscountAmount,
+          payment_attempts: 1,
+        },
+        created_by: email || 'system',
+        metadata: {
+          design_code: designCode,
+          discount_applied: !!discountCode,
+        },
+      });
+
+    if (eventError) {
+      console.error('Error recording checkout session event:', eventError);
+      // Don't fail the checkout session creation, just log the error
+    }
+
+    // Update the design request state to show payment is processing
+    const { error: stateError } = await supabase
+      .from('design_request_states')
+      .upsert({
+        request_id: applicationId,
         design_code: designCode,
-        discount_applied: !!discountCode,
-      },
-    });
+        product_id: (requestData || baseRequest).product_id,
+        current_status: 'SUBMITTED',
+        current_payment_status: 'PROCESSING',
+        stripe_payment_intent_id: session.id,
+        payment_attempts: 1,
+        last_payment_attempt_at: new Date().toISOString(),
+        updated_at: new Date().toISOString(),
+      }, {
+        onConflict: 'request_id'
+      });
+
+    if (stateError) {
+      console.error('Error updating design request state:', stateError);
+      // Don't fail the checkout session creation, just log the error
+    }
 
     return NextResponse.json({ sessionId: session.id, designCode });
   } catch (error) {
