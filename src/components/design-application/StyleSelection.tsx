@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { OptimizedImage } from '../OptimizedImage';
 import { DesignStyle } from './types';
 
 interface StyleSelectionProps {
@@ -49,7 +50,17 @@ export function StyleSelection({
       onClick={() => onSelect(style.id)}
     >
       {style.image_url ? (
-        <img src={style.image_url} alt={style.name} className="style-image" />
+        <OptimizedImage
+          src={style.image_url}
+          alt={style.name}
+          width={400}
+          height={300}
+          quality={80}
+          lazy={true}
+          className="style-image"
+          maxWidth={400}
+          maxHeight={300}
+        />
       ) : (
         <div className="style-image" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <span role="img" aria-label="sparkles">✨</span>

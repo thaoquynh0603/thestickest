@@ -3,13 +3,36 @@ const nextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'placehold.co' }
-    ]
+    ],
+    formats: ['image/webp', 'image/avif'],
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920, 2048, 3840],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384],
+    minimumCacheTTL: 60 * 60 * 24 * 30, // 30 days
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
   // Allow production builds to succeed even if there are ESLint errors.
   // Justification: unblock builds while we address lint issues incrementally.
   eslint: {
     ignoreDuringBuilds: true,
   },
+  // Performance optimizations
+  experimental: {
+    optimizeCss: true,
+    optimizePackageImports: ['@next/font'],
+  },
+  // Compression
+  compress: true,
+  // Bundle analyzer (optional - uncomment to analyze bundle size)
+  // webpack: (config, { isServer }) => {
+  //   if (!isServer) {
+  //     config.resolve.fallback = {
+  //       ...config.resolve.fallback,
+  //       fs: false,
+  //     };
+  //   }
+  //   return config;
+  // },
 };
 
 export default nextConfig;

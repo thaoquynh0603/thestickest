@@ -26,6 +26,70 @@
   will-change: auto;
 }
 
+/* Image optimization styles */
+.optimized-image-container {
+  position: relative;
+  overflow: hidden;
+  background: #f8f9fa;
+}
+
+.optimized-image.loading {
+  opacity: 0.7;
+  transition: opacity 0.3s ease-in-out;
+}
+
+.optimized-image.loaded {
+  opacity: 1;
+}
+
+.image-skeleton {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: loading 1.5s infinite;
+  border-radius: inherit;
+}
+
+@keyframes loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Optimize image rendering */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Reduce layout shift for images */
+img[loading="lazy"] {
+  min-height: 1px;
+}
+
+/* Optimize carousel performance */
+.hero-carousel-slide,
+.product-slide,
+.slide {
+  will-change: opacity, transform;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+/* Optimize transitions */
+.hero-carousel-slide.active,
+.product-slide.active,
+.slide.active {
+  transition: opacity 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+
+
 /* Status indicators for payment success page */
 .status-draft {
   color: #6b7280;

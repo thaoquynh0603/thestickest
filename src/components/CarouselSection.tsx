@@ -4,6 +4,7 @@ import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Product } from '@/types/database';
+import { OptimizedImage } from './OptimizedImage';
 
 interface CarouselItem {
   id: string;
@@ -184,11 +185,10 @@ export function CarouselSection({ product }: CarouselSectionProps) {
             key={index}
             className={`hero-carousel-slide ${index === currentSlide ? 'active' : ''}`}
           >
-            <Image
+            <OptimizedImage
               src={slide.image}
               alt={slide.title}
               fill
-              sizes="100vw"
               priority={index === 0}
               quality={85}
               onLoad={() => handleImageLoad(index)}
@@ -197,6 +197,9 @@ export function CarouselSection({ product }: CarouselSectionProps) {
                 opacity: imagesLoaded.has(index) ? 1 : 0,
                 transition: 'opacity 0.3s ease-in-out'
               }}
+              lazy={index > 1}
+              maxWidth={1920}
+              maxHeight={1080}
             />
           </div>
         ))}
