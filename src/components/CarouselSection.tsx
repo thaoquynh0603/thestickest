@@ -197,7 +197,7 @@ export function CarouselSection({ product }: CarouselSectionProps) {
                 opacity: imagesLoaded.has(index) ? 1 : 0,
                 transition: 'opacity 0.3s ease-in-out'
               }}
-              lazy={index > 1}
+              lazy={false}
               maxWidth={1920}
               maxHeight={1080}
             />
