@@ -12,12 +12,26 @@ interface ProductCarouselProps {
 }
 
 // Validation function to ensure position is a valid PositionClass
-const validatePosition = (position: string | null | undefined): PositionClass => {
+const validatePosition = (position: string | undefined): PositionClass => {
   const validPositions: PositionClass[] = ['top-left', 'top-right', 'center-left', 'center-right', 'bottom-left', 'bottom-right'];
-  if (!position || typeof position !== 'string') {
+  
+  // Strengthen null check and add logging
+  if (!position || typeof position !== 'string' || position.trim() === '') {
+    console.warn('ProductCarousel: Invalid position value:', position, 'Defaulting to bottom-left');
     return 'bottom-left';
   }
-  return validPositions.includes(position as PositionClass) ? position as PositionClass : 'bottom-left';
+  
+  // Ensure validPositions is an array before calling includes
+  if (!Array.isArray(validPositions)) {
+    console.error('ProductCarousel: validPositions is not an array:', validPositions);
+    return 'bottom-left';
+  }
+  
+  const result = validPositions.includes(position as PositionClass) ? position as PositionClass : 'bottom-left';
+  if (result !== position) {
+    console.warn('ProductCarousel: Position not in valid positions:', position, 'Defaulting to bottom-left');
+  }
+  return result;
 };
 
 export default function ProductCarousel({ carouselItems, productTitle, productSlug }: ProductCarouselProps) {

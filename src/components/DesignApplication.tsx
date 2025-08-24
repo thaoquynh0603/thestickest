@@ -25,6 +25,38 @@ interface DesignApplicationProps {
 }
 
 export default function DesignApplication({ product, application, questions: initialQuestions = [] }: DesignApplicationProps) {
+  // Error boundary state
+  const [hasError, setHasError] = useState(false);
+  const [errorDetails, setErrorDetails] = useState<string>('');
+
+  // Error handler
+  const handleError = (error: Error, errorInfo: any) => {
+    console.error('DesignApplication: Error caught:', error, errorInfo);
+    setHasError(true);
+    setErrorDetails(error.message);
+  };
+
+  // If there's an error, show error UI
+  if (hasError) {
+    return (
+      <div style={{ padding: '2rem', textAlign: 'center' }}>
+        <h1>Something went wrong</h1>
+        <p>We encountered an error while rendering the design application.</p>
+        <p>Error: {errorDetails}</p>
+        <button 
+          onClick={() => {
+            setHasError(false);
+            setErrorDetails('');
+            window.location.reload();
+          }}
+          style={{ padding: '0.5rem 1rem', margin: '1rem' }}
+        >
+          Reload Page
+        </button>
+      </div>
+    );
+  }
+
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState(0); // 0 = welcome
   const [isLoading, setIsLoading] = useState(false);
@@ -35,219 +67,401 @@ export default function DesignApplication({ product, application, questions: ini
 
   // Safety check to prevent hydration issues
   if (!application || !product) {
+    console.error('DesignApplication: Missing required props:', { application, product });
     return <div>Loading...</div>;
   }
 
-  const [applicationData, setApplicationData] = useState<ApplicationData>({ email: application.email || '' } as ApplicationData);
+  // Additional safety check for questions
+  if (!Array.isArray(questions)) {
+    console.error('DesignApplication: Questions is not an array:', questions);
+    return <div>Error: Invalid question data</div>;
+  }
+
+  // Validate each question has required fields
+  const invalidQuestions = questions.filter(q => !q || !q.id || !q.question_text || !q.question_type);
+  if (invalidQuestions.length > 0) {
+    console.error('DesignApplication: Found invalid questions:', invalidQuestions);
+    return <div>Error: Some questions are missing required data</div>;
+  }
+
+  const [applicationData, setApplicationData] = useState<ApplicationData>({ 
+    email: application.email || '', 
+    howDidYouHear: [] // Initialize as empty array immediately
+  } as ApplicationData);
   
-  // Initialize application data from localStorage after component mounts
-  useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const raw = localStorage.getItem(storageKey);
-        if (raw) {
-          const parsed = JSON.parse(raw || '{}');
-          setApplicationData({ ...(parsed as ApplicationData), email: application.email || '' } as ApplicationData);
-        }
-      }
-    } catch (e) {
-      // ignore parse errors
-    }
-  }, [storageKey, application.email]);
-  const [previews, setPreviews] = useState<Record<string, string[]>>({});
-  const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
-  // selections are stored in applicationData[question.id] (prefer stable IDs when provided)
-  const [designCode, setDesignCode] = useState<string>(application.design_code);
-  const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
-  const [customFlowCompletion, setCustomFlowCompletion] = useState<Record<string, boolean>>({});
-  // Find the first question that has option_items from a design-style-like source.
-  // The API now returns `option_source_type` per question (e.g. 'design_styles', 'question_demo_items').
-  const styleQuestionIndex = useMemo(() => {
-    return questions.findIndex((q) => q.option_items && Array.isArray(q.option_items) && q.option_items.length > 0 && (q as any).option_source_type === 'design_styles');
-  }, [questions]);
-
-  // Initialize application data with empty values for each question
-  useEffect(() => {
-    // Only seed missing keys so we don't clobber user-entered answers when questions change
-    setApplicationData((prev) => {
-      const next: ApplicationData = { ...(prev ?? {}), email: application.email || '' } as ApplicationData;
-      questions.forEach((question: ApplicationQuestion) => {
-        if (!(question.id in next)) {
-          next[question.id] = '';
-        }
-      });
-      // Initialize the global howDidYouHear as an empty array if not present
-      if (!('howDidYouHear' in next)) {
-        (next as any).howDidYouHear = [];
-      }
-      return next;
-    });
-  }, [questions, application.email]);
-
-  // Debounced autosave of partial answers to localStorage
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    const t = setTimeout(() => {
+    // Initialize application data from localStorage after component mounts
+    useEffect(() => {
       try {
-        localStorage.setItem(storageKey, JSON.stringify(applicationData));
-      } catch (e) {
-        // ignore quota or serialization errors
-      }
-    }, 400);
-    return () => clearTimeout(t);
-  }, [applicationData, storageKey]);
-
-  const updateApplicationData = (field: string, value: string | File | string[]) => {
-    setApplicationData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  const saveProgress = async () => {
-    setIsSaving(true);
-    try {
-      const answers: { [key: string]: any } = {};
-
-      // Build answers object from all applicationData entries.
-      // This ensures namespaced keys produced by custom flows (e.g. `${question.id}:${templateId}`)
-      // are included so independent custom templates do not collide when saved.
-      Object.entries(applicationData).forEach(([key, value]) => {
-        if (value !== undefined && value !== null && value !== '') {
-          answers[key] = value;
+        if (typeof window !== 'undefined') {
+          const raw = localStorage.getItem(storageKey);
+          if (raw) {
+            const parsed = JSON.parse(raw || '{}');
+            const data = { ...(parsed as ApplicationData), email: application.email || '' } as ApplicationData;
+            
+            // Ensure howDidYouHear is always an array to prevent .includes() errors
+            if (!Array.isArray((data as any).howDidYouHear)) {
+              console.warn('DesignApplication: howDidYouHear was not an array, fixing:', (data as any).howDidYouHear);
+              (data as any).howDidYouHear = [];
+            }
+            
+            // Additional safety check: ensure all checkbox questions have array values
+            questions.forEach((question: ApplicationQuestion) => {
+              if (question.question_type === 'checkboxes') {
+                const existingValue = (data as any)[question.id];
+                if (!Array.isArray(existingValue)) {
+                  console.warn('DesignApplication: localStorage had non-array value for checkbox question, fixing:', {
+                    questionId: question.id,
+                    value: existingValue
+                  });
+                  (data as any)[question.id] = [];
+                }
+              }
+            });
+            
+            console.log('DesignApplication: Loaded and sanitized localStorage data:', {
+              keys: Object.keys(data),
+              checkboxValues: questions.filter(q => q.question_type === 'checkboxes').map(q => ({
+                questionId: q.id,
+                value: (data as any)[q.id],
+                isArray: Array.isArray((data as any)[q.id])
+              }))
+            });
+            
+            setApplicationData(data);
+          }
         }
-      });
-      // Include the global HowDidYouHear answer under a stable key
-      if (Array.isArray(applicationData.howDidYouHear) && applicationData.howDidYouHear.length > 0) {
-        answers['how_did_you_hear'] = applicationData.howDidYouHear;
-      }
-
-      const response = await fetch('/api/design-requests', {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          requestId: application.id,
-          answers,
-          email: applicationData.email
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Failed to save progress:', errorData);
-      }
-      // capture a debug snapshot of what we attempted to save
-      try {
-        const snapshot = {
-          requestId: application.id,
-          timestamp: new Date().toISOString(),
-          answers,
-          email: applicationData.email
-        };
-        // keep in-memory history since application started
-        setSaveSnapshots(prev => [...prev, snapshot]);
-        // also POST to debug endpoint so server logs contain the snapshot
-        fetch('/api/debug/save-snapshot', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(snapshot)
-        }).catch((e) => console.warn('Failed to send debug snapshot', e));
-        // client debug log
-        console.debug('Saved progress snapshot', snapshot);
       } catch (e) {
-        console.warn('Failed to capture save snapshot', e);
+        console.error('DesignApplication: Error parsing localStorage data:', e);
+        // Initialize with safe defaults - preserve the howDidYouHear array
+        setApplicationData(prev => ({ 
+          ...prev, 
+          email: application.email || '',
+          howDidYouHear: prev.howDidYouHear || [] // Keep existing array or use empty array
+        } as ApplicationData));
       }
-    } catch (error) {
-      console.error('Error saving progress:', error);
-    } finally {
-      setIsSaving(false);
-    }
-  };
+    }, [storageKey, application.email]);
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, questionId: string): Promise<string | undefined> => {
-    const files = event.target.files;
-    if (!files || files.length === 0) return;
 
-    // Only handle a single file even if multiple are somehow provided
-    const file = files[0];
+    const [previews, setPreviews] = useState<Record<string, string[]>>({});
+    const [uploadingFiles, setUploadingFiles] = useState<Record<string, boolean>>({});
+    // selections are stored in applicationData[question.id] (prefer stable IDs when provided)
+    const [designCode, setDesignCode] = useState<string>(application.design_code);
+    const [paymentStatus, setPaymentStatus] = useState<'pending' | 'success' | 'failed'>('pending');
+    const [customFlowCompletion, setCustomFlowCompletion] = useState<Record<string, boolean>>({});
+    // Find the first question that has option_items from a design-style-like source.
+    // The API now returns `option_source_type` per question (e.g. 'design_styles', 'question_demo_items').
+    const styleQuestionIndex = useMemo(() => {
+      return questions.findIndex((q) => q.option_items && Array.isArray(q.option_items) && q.option_items.length > 0 && (q as any).option_source_type === 'design_styles');
+    }, [questions]);
 
-    // Validate file size (configurable client-side limit)
-    if (file.size > CLIENT_MAX_UPLOAD_SIZE) {
-      alert(`File ${file.name} is too large. File size must be less than ${CLIENT_MAX_UPLOAD_SIZE_MB}MB`);
-      return;
-    }
+    // Initialize application data with empty values for each question
+    useEffect(() => {
+      // Only seed missing keys so we don't clobber user-entered answers when questions change
+      setApplicationData((prev) => {
+        const next: ApplicationData = { ...(prev ?? {}), email: application.email || '' } as ApplicationData;
+        
+        console.log('DesignApplication: Initializing application data for questions:', {
+          questionsCount: questions.length,
+          questionTypes: questions.map(q => ({ id: q.id, type: q.question_type, text: q.question_text })),
+          existingKeys: Object.keys(prev || {}),
+          email: application.email
+        });
+        
+        questions.forEach((question: ApplicationQuestion) => {
+          if (!(question.id in next)) {
+            // Initialize checkbox questions with empty arrays to prevent .includes() errors
+            if (question.question_type === 'checkboxes') {
+              next[question.id] = [];
+              console.log('DesignApplication: Initialized checkbox question with empty array:', question.id);
+            } else {
+              next[question.id] = '';
+              console.log('DesignApplication: Initialized non-checkbox question with empty string:', question.id);
+            }
+          } else {
+            console.log('DesignApplication: Question already has value:', {
+              questionId: question.id,
+              questionType: question.question_type,
+              existingValue: next[question.id],
+              isArray: Array.isArray(next[question.id])
+            });
+          }
+        });
+        // Initialize the global howDidYouHear as an empty array if not present
+        if (!('howDidYouHear' in next)) {
+          (next as any).howDidYouHear = [];
+        }
+        // Ensure howDidYouHear is always an array to prevent .includes() errors
+        if (!Array.isArray((next as any).howDidYouHear)) {
+          console.warn('DesignApplication: howDidYouHear was not an array during initialization, fixing:', (next as any).howDidYouHear);
+          (next as any).howDidYouHear = [];
+        }
+        
+        console.log('DesignApplication: Final application data state:', {
+          keys: Object.keys(next),
+          checkboxValues: questions.filter(q => q.question_type === 'checkboxes').map(q => ({
+            questionId: q.id,
+            value: next[q.id],
+            isArray: Array.isArray(next[q.id])
+          }))
+        });
+        
+        return next;
+      });
+    }, [questions, application.email]);
 
-    // Validate file type
-    // Accept common web image types plus iPhone HEIC/HEIF variants. Some iPhones produce HEIC/HEIF images
-    // which have MIME types like image/heic or image/heif; reject only clearly non-image files here.
-    const allowedTypes = [
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/gif',
-      'image/heic',
-      'image/heif',
-      'image/heif-sequence',
-      'image/heic-sequence',
-    ];
+    // Additional safety check to ensure howDidYouHear is always an array
+    useEffect(() => {
+      setApplicationData((prev) => {
+        if (!Array.isArray((prev as any).howDidYouHear)) {
+          console.warn('DesignApplication: howDidYouHear was not an array in safety check, fixing:', (prev as any).howDidYouHear);
+          return { ...prev, howDidYouHear: [] } as ApplicationData;
+        }
+        return prev;
+      });
+    }, []);
 
-    // Some browsers may report no specific subtype; allow any image/* as a fallback.
-    const isImageType = file.type.startsWith('image/');
-
-    if (!isImageType || (!allowedTypes.includes(file.type) && !file.type.startsWith('image/'))) {
-      alert(`File ${file.name} is not a valid image file. Please upload JPG, PNG, GIF, or HEIC/HEIF files.`);
-      return;
-    }
-
-    // Set uploading state for this question
-    setUploadingFiles(prev => ({ ...prev, [questionId]: true }));
-
-    try {
-      // Create a local preview immediately for better UX
-      const localUrl = URL.createObjectURL(file);
-
-      // Try server-side upload API first, fallback to client-side if it fails
-      let fileUrl: string;
+    // Safety check to ensure applicationData is properly initialized
+    useEffect(() => {
+      if (!applicationData || typeof applicationData !== 'object') {
+        console.error('DesignApplication: applicationData is invalid:', applicationData);
+        return;
+      }
       
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-        formData.append('applicationId', application.id);
-        formData.append('fileType', questionId);
-        formData.append('questionId', questionId);
+      // Ensure all checkbox questions have array values
+      questions.forEach((question: ApplicationQuestion) => {
+        if (question.question_type === 'checkboxes') {
+          const value = (applicationData as any)[question.id];
+          if (!Array.isArray(value)) {
+            console.warn('DesignApplication: Checkbox question missing array value, fixing:', {
+              questionId: question.id,
+              value: value
+            });
+            setApplicationData(prev => ({
+              ...prev,
+              [question.id]: []
+            } as ApplicationData));
+          }
+        }
+      });
+    }, [applicationData, questions]);
 
-        const uploadResponse = await fetch('/api/upload-design-file', {
-          method: 'POST',
-          body: formData,
+    // Debounced autosave of partial answers to localStorage
+    useEffect(() => {
+      if (typeof window === 'undefined') return;
+      const t = setTimeout(() => {
+        try {
+          localStorage.setItem(storageKey, JSON.stringify(applicationData));
+        } catch (e) {
+          // ignore quota or serialization errors
+        }
+      }, 400);
+      return () => clearTimeout(t);
+    }, [applicationData, storageKey]);
+
+    const updateApplicationData = (field: string, value: string | File | string[]) => {
+      setApplicationData(prev => {
+        const next = {
+          ...prev,
+          [field]: value
+        };
+        
+        // Special handling for howDidYouHear to ensure it's always an array
+        if (field === 'howDidYouHear') {
+          if (!Array.isArray(value)) {
+            console.warn('DesignApplication: Attempted to set howDidYouHear to non-array value, fixing:', value);
+            (next as any).howDidYouHear = [];
+          } else {
+            (next as any).howDidYouHear = value;
+          }
+        }
+        
+        // Special handling for checkbox questions to ensure they're always arrays
+        const question = questions.find(q => q.id === field);
+        if (question && question.question_type === 'checkboxes') {
+          if (!Array.isArray(value)) {
+            console.warn('DesignApplication: Attempted to set checkbox question to non-array value, fixing:', value);
+            next[field] = [];
+          }
+        }
+        
+        // Additional safety check to ensure howDidYouHear is never undefined
+        if (!Array.isArray((next as any).howDidYouHear)) {
+          console.warn('DesignApplication: howDidYouHear became undefined/null, fixing:', (next as any).howDidYouHear);
+          (next as any).howDidYouHear = [];
+        }
+        
+        return next;
+      });
+    };
+
+    const saveProgress = async () => {
+      setIsSaving(true);
+      try {
+        const answers: { [key: string]: any } = {};
+
+        // Build answers object from all applicationData entries.
+        // This ensures namespaced keys produced by custom flows (e.g. `${question.id}:${templateId}`)
+        // are included so independent custom templates do not collide when saved.
+        Object.entries(applicationData).forEach(([key, value]) => {
+          if (value !== undefined && value !== null && value !== '') {
+            answers[key] = value;
+          }
+        });
+        // Include the global HowDidYouHear answer under a stable key
+        if (Array.isArray(applicationData.howDidYouHear) && applicationData.howDidYouHear.length > 0) {
+          answers['how_did_you_hear'] = applicationData.howDidYouHear;
+        } else if (!Array.isArray(applicationData.howDidYouHear)) {
+          console.warn('DesignApplication: howDidYouHear not an array in saveProgress, fixing:', applicationData.howDidYouHear);
+          // Fix the data structure before saving
+          setApplicationData(prev => ({ ...prev, howDidYouHear: [] } as ApplicationData));
+          // Don't include in answers since it's empty
+        }
+
+        // Special handling for email questions - ensure email is always sent
+        let emailToSend = applicationData.email;
+        
+        // If we have answers and one of them is an email question, extract the email
+        if (Object.keys(answers).length > 0) {
+          // Find the email question ID from the questions array
+          const emailQuestion = questions.find(q => q.question_type === 'email');
+          if (emailQuestion && answers[emailQuestion.id]) {
+            emailToSend = answers[emailQuestion.id];
+            console.log('📧 Found email in answers:', emailToSend);
+            
+            // Update the frontend state with the email so validation works
+            if (emailToSend !== applicationData.email) {
+              setApplicationData(prev => ({ ...prev, email: emailToSend }));
+              console.log('📧 Updated applicationData.email to:', emailToSend);
+            }
+          }
+        }
+
+        const response = await fetch('/api/design-requests', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            requestId: application.id,
+            answers,
+            email: emailToSend
+          }),
         });
 
-        if (uploadResponse.ok) {
-          const uploadResult = await uploadResponse.json();
-          fileUrl = uploadResult.fileUrl;
-          console.log('Server-side upload successful:', fileUrl);
-        } else {
-          // Server-side upload failed, try client-side as fallback
-          console.warn('Server-side upload failed, trying client-side fallback...');
-          throw new Error('Server-side upload failed');
+        if (!response.ok) {
+          const errorData = await response.json();
+          console.error('Failed to save progress:', errorData);
+        }
+        // capture a debug snapshot of what we attempted to save
+        try {
+          const snapshot = {
+            requestId: application.id,
+            timestamp: new Date().toISOString(),
+            answers,
+            email: emailToSend
+          };
+          // keep in-memory history since application started
+          setSaveSnapshots(prev => [...prev, snapshot]);
+          // also POST to debug endpoint so server logs contain the snapshot
+          fetch('/api/debug/save-snapshot', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(snapshot)
+          }).catch((e) => console.warn('Failed to send debug snapshot', e));
+          // client debug log
+          console.debug('Saved progress snapshot', snapshot);
+        } catch (e) {
+          console.warn('Failed to capture save snapshot', e);
         }
       } catch (error) {
-        console.log('Falling back to client-side upload...');
-        
-        // Client-side upload fallback
-        const fileExt = file.name.split('.').pop();
-        const remotePath = `${application.id}/${questionId}/${Date.now()}.${fileExt}`;
+        console.error('Error saving progress:', error);
+      } finally {
+        setIsSaving(false);
+      }
+    };
 
-        const { data: uploadData, error: uploadError } = await supabase.storage
-          .from('design-files')
-          .upload(remotePath, file, { cacheControl: '3600', upsert: false });
+    const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, questionId: string): Promise<string | undefined> => {
+      const files = event.target.files;
+      if (!files || files.length === 0) return;
+
+      // Only handle a single file even if multiple are somehow provided
+      const file = files[0];
+
+      // Validate file size (configurable client-side limit)
+      if (file.size > CLIENT_MAX_UPLOAD_SIZE) {
+        alert(`File ${file.name} is too large. File size must be less than ${CLIENT_MAX_UPLOAD_SIZE_MB}MB`);
+        return;
+      }
+
+      // Validate file type
+      // Accept common web image types plus iPhone HEIC/HEIF variants. Some iPhones produce HEIC/HEIF images
+      // which have MIME types like image/heic or image/heif; reject only clearly non-image files here.
+      const allowedTypes = [
+        'image/jpeg',
+        'image/jpg',
+        'image/png',
+        'image/gif',
+        'image/heic',
+        'image/heif',
+        'image/heif-sequence',
+        'image/heic-sequence',
+      ];
+
+      // Some browsers may report no specific subtype; allow any image/* as a fallback.
+      const isImageType = file.type.startsWith('image/');
+
+      if (!isImageType || (!Array.isArray(allowedTypes) || !allowedTypes.includes(file.type)) && !file.type.startsWith('image/')) {
+        alert(`File ${file.name} is not a valid image file. Please upload JPG, PNG, GIF, or HEIC/HEIF files.`);
+        return;
+      }
+
+      // Set uploading state for this question
+      setUploadingFiles(prev => ({ ...prev, [questionId]: true }));
+
+      try {
+        // Create a local preview immediately for better UX
+        const localUrl = URL.createObjectURL(file);
+
+        // Try server-side upload API first, fallback to client-side if it fails
+        let fileUrl: string;
+        
+        try {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('applicationId', application.id);
+          formData.append('fileType', questionId);
+          formData.append('questionId', questionId);
+
+          const uploadResponse = await fetch('/api/upload-design-file', {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (uploadResponse.ok) {
+            const uploadResult = await uploadResponse.json();
+            fileUrl = uploadResult.fileUrl;
+            console.log('Server-side upload successful:', fileUrl);
+          } else {
+            // Server-side upload failed, try client-side as fallback
+            console.warn('Server-side upload failed, trying client-side fallback...');
+            throw new Error('Server-side upload failed');
+          }
+        } catch (error) {
+          console.log('Falling back to client-side upload...');
+          
+          // Client-side upload fallback
+          const fileExt = file.name.split('.').pop();
+          const remotePath = `${application.id}/${questionId}/${Date.now()}.${fileExt}`;
+
+          const { data: uploadData, error: uploadError } = await supabase.storage
+            .from('design-files')
+            .upload(remotePath, file, { cacheControl: '3600', upsert: false });
 
                  if (uploadError) {
            console.error('Client-side upload error:', uploadError);
            
            // Check if it's an RLS policy issue
-           if (uploadError.message?.includes('row-level security policy')) {
+           if (uploadError.message && typeof uploadError.message === 'string' && uploadError.message.includes('row-level security policy')) {
              alert(`Upload failed: Storage policies require authentication. Please contact support to configure anonymous uploads.`);
            } else {
              alert(`Failed to upload ${file.name}: ${uploadError.message || JSON.stringify(uploadError)}`);
@@ -346,7 +560,10 @@ export default function DesignApplication({ product, application, questions: ini
     // For now, we'll use a simple check based on the custom data structure
     // This can be enhanced later with cached custom question requirements
     
-    if (!customData || typeof customData !== 'object') return false;
+    if (!customData || typeof customData !== 'object') {
+      console.warn('DesignApplication: Invalid customData in isCustomFlowCompleteSync:', customData);
+      return false;
+    }
     
     // Check if any meaningful data exists (not just 'uploaded' placeholders)
     const hasMeaningfulData = Object.values(customData).some(v => {
@@ -359,7 +576,7 @@ export default function DesignApplication({ product, application, questions: ini
     // If no meaningful data, check if there are uploaded files for this custom flow
     if (!hasMeaningfulData) {
       const hasUploadedFiles = Object.keys(previews).some(key => 
-        key.startsWith(templateId) && previews[key].length > 0
+        key && key.startsWith(templateId) && Array.isArray(previews[key]) && previews[key].length > 0
       );
       return hasUploadedFiles;
     }
@@ -460,7 +677,14 @@ export default function DesignApplication({ product, application, questions: ini
     // If we're on the extra 'how did you hear' step (placed after questions), require at least one selection
     if (currentStep === questions.length + 1) {
       const v = (applicationData as any).howDidYouHear;
-      return !Array.isArray(v) || v.length === 0;
+      // Safety check to ensure howDidYouHear is an array before calling .length
+      if (!Array.isArray(v)) {
+        console.warn('DesignApplication: howDidYouHear is not an array in isNextButtonDisabled:', v);
+        // Auto-fix and continue
+        setApplicationData(prev => ({ ...prev, howDidYouHear: [] } as ApplicationData));
+        return true; // Disable next if howDidYouHear is not an array
+      }
+      return v.length === 0;
     }
 
     return false;
@@ -633,7 +857,30 @@ export default function DesignApplication({ product, application, questions: ini
           <div className="form-group">
               <QuestionRenderer
               question={question}
-              value={applicationData[question.id]}
+              value={(() => {
+                // Ensure checkbox questions always have an array value to prevent .includes() errors
+                const val = applicationData[question.id];
+                
+                // Add logging for debugging
+                if (question.question_type === 'checkboxes') {
+                  console.log('DesignApplication: Rendering checkbox question:', {
+                    questionId: question.id,
+                    questionText: question.question_text,
+                    value: val,
+                    isArray: Array.isArray(val),
+                    applicationDataKeys: Object.keys(applicationData)
+                  });
+                  
+                  if (!Array.isArray(val)) {
+                    console.warn('DesignApplication: Checkbox question has non-array value, fixing:', val);
+                  }
+                  
+                  return Array.isArray(val) ? val : [];
+                }
+                
+                // For other question types, return the value as-is
+                return val;
+              })()}
               updateApplicationData={(field, val) => {
                 // If this question's source is a design-style (or similar), we store selection in applicationData
                 // prefer stable ids when available; QuestionRenderer already sends id when available
@@ -665,17 +912,33 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Review step
-  // Insert HowDidYouHear step at index questions.length + 1 (after all questions)
-  if (currentStep === questions.length + 1) {
+    // Insert HowDidYouHear step at index questions.length + 1 (after all questions)
+    if (currentStep === questions.length + 1) {
+      // Safety check to ensure howDidYouHear is always an array
+      let howDidYouHearValue = (applicationData as any).howDidYouHear;
+      
+      // Multiple layers of safety
+      if (!Array.isArray(howDidYouHearValue)) {
+        console.warn('DesignApplication: howDidYouHear not an array in renderStep, fixing:', howDidYouHearValue);
+        // Fix it immediately
+        setApplicationData(prev => ({ ...prev, howDidYouHear: [] } as ApplicationData));
+        howDidYouHearValue = [];
+      }
+      
+      // Additional logging for debugging
+      if (!Array.isArray(applicationData.howDidYouHear)) {
+        console.warn('DesignApplication: howDidYouHear not an array in renderStep, fixing:', applicationData.howDidYouHear);
+      }
+      
       return (
         <HowDidYouHear
-          value={Array.isArray(applicationData.howDidYouHear) ? (applicationData.howDidYouHear as string[]) : []}
+          value={howDidYouHearValue}
           onChange={(vals) => updateApplicationData('howDidYouHear', vals)}
         />
       );
     }
 
-  if (currentStep === questions.length + 2) {
+    if (currentStep === questions.length + 2) {
       return (
         <ReviewSummary
           questions={questions}
@@ -698,11 +961,11 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Payment step
-  if (currentStep === questions.length + 3) {
+    if (currentStep === questions.length + 3) {
       return (
         <PaymentStep
           applicationId={application.id}
-          email={applicationData.email || undefined}
+          email={applicationData.email}
           amount={product.price || 2.0}
           isLoading={isLoading}
           onSuccess={() => {
@@ -721,7 +984,7 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Success step
-  if (currentStep === questions.length + 4) {
+    if (currentStep === questions.length + 4) {
       return (
         <SuccessStep
           designCode={designCode}
@@ -733,7 +996,7 @@ export default function DesignApplication({ product, application, questions: ini
     }
 
     // Error step
-  if (currentStep === questions.length + 5) {
+    if (currentStep === questions.length + 5) {
       return <ErrorStep designCode={designCode} productTitle={product.title || ''} />;
     }
 
@@ -742,6 +1005,146 @@ export default function DesignApplication({ product, application, questions: ini
 
   // steps: 0=welcome, 1..questionsLength = questions, questions.length+1 = howDidYouHear, +2 = review, +3 payment, +4 success, +5 error
   const totalSteps = (questions.length + 4) + 1; // +4 for how-did-you-hear + review + payment + success/error, +1 welcome
+
+  // Data validation function to help debug issues
+  const validateDataStructure = () => {
+    const issues: string[] = [];
+    
+    // Check questions array
+    if (!Array.isArray(questions)) {
+      issues.push(`Questions is not an array: ${typeof questions}`);
+    }
+    
+    // Check applicationData structure
+    if (!applicationData || typeof applicationData !== 'object') {
+      issues.push(`ApplicationData is invalid: ${typeof applicationData}`);
+    } else {
+      // Check howDidYouHear specifically
+      if (!Array.isArray((applicationData as any).howDidYouHear)) {
+        issues.push(`howDidYouHear is not an array: ${typeof (applicationData as any).howDidYouHear}`);
+        
+        // Auto-fix the issue immediately
+        console.warn('DesignApplication: Auto-fixing howDidYouHear from undefined to empty array');
+        setApplicationData(prev => ({ ...prev, howDidYouHear: [] } as ApplicationData));
+      }
+      
+      // Check other critical fields
+      questions.forEach((q, index) => {
+        const value = applicationData[q.id];
+        if (q.question_type === 'checkboxes' && !Array.isArray(value) && value !== undefined && value !== null && value !== '') {
+          issues.push(`Question ${index} (${q.id}) should be array but is: ${typeof value}`);
+        }
+      });
+    }
+    
+    if (issues.length > 0) {
+      console.warn('DesignApplication: Data structure validation issues:', issues);
+    }
+    
+    return issues.length === 0;
+  };
+
+  // Run validation on mount and when data changes
+  useEffect(() => {
+    validateDataStructure();
+  }, [questions, applicationData]);
+
+  // Additional safety check that runs on every render
+  useEffect(() => {
+    // Ensure howDidYouHear is always an array on every render
+    if (!Array.isArray((applicationData as any).howDidYouHear)) {
+      console.warn('DesignApplication: howDidYouHear validation failed on render, fixing:', (applicationData as any).howDidYouHear);
+      setApplicationData(prev => ({ ...prev, howDidYouHear: [] } as ApplicationData));
+    }
+  });
+
+  // Comprehensive safety check and logging
+  useEffect(() => {
+    console.log('DesignApplication: Component state check:', {
+      hasApplication: !!application,
+      hasProduct: !!product,
+      questionsCount: questions?.length || 0,
+      applicationDataKeys: Object.keys(applicationData || {}),
+      applicationDataTypes: Object.entries(applicationData || {}).map(([key, value]) => ({
+        key,
+        type: typeof value,
+        isArray: Array.isArray(value),
+        value: value
+      }))
+    });
+
+    // Validate all data structures
+    if (!application || !product) {
+      console.error('DesignApplication: Critical props missing');
+      return;
+    }
+
+    if (!Array.isArray(questions)) {
+      console.error('DesignApplication: Questions not an array');
+      return;
+    }
+
+    // Check each question
+    questions.forEach((question, index) => {
+      if (!question) {
+        console.error('DesignApplication: Question is null/undefined at index:', index);
+        return;
+      }
+
+      console.log('DesignApplication: Question validation:', {
+        index,
+        id: question.id,
+        type: question.question_type,
+        text: question.question_text,
+        hasOptions: Array.isArray(question.option_items),
+        optionsCount: question.option_items?.length || 0
+      });
+
+      // Validate checkbox questions specifically
+      if (question.question_type === 'checkboxes') {
+        const value = (applicationData as any)[question.id];
+        console.log('DesignApplication: Checkbox question value:', {
+          questionId: question.id,
+          value: value,
+          isArray: Array.isArray(value),
+          type: typeof value
+        });
+
+        if (!Array.isArray(value)) {
+          console.error('DesignApplication: Checkbox question has non-array value:', {
+            questionId: question.id,
+            value: value,
+            type: typeof value
+          });
+        }
+      }
+    });
+  }, [application, product, questions, applicationData]);
+
+  // Global error handler to catch any remaining includes() errors
+  useEffect(() => {
+    const handleGlobalError = (event: ErrorEvent) => {
+      if (event.error && event.error.message && event.error.message.includes('Cannot read properties of null (reading \'includes\')')) {
+        console.error('DesignApplication: Caught global includes() error:', event.error);
+        handleError(event.error, {});
+      }
+    };
+
+    const handleUnhandledRejection = (event: PromiseRejectionEvent) => {
+      if (event.reason && event.reason.message && event.reason.message.includes('Cannot read properties of null (reading \'includes\')')) {
+        console.error('DesignApplication: Caught unhandled promise rejection with includes() error:', event.reason);
+        handleError(event.reason, {});
+      }
+    };
+
+    window.addEventListener('error', handleGlobalError);
+    window.addEventListener('unhandledrejection', handleUnhandledRejection);
+
+    return () => {
+      window.removeEventListener('error', handleGlobalError);
+      window.removeEventListener('unhandledrejection', handleUnhandledRejection);
+    };
+  }, []);
 
   return (
     <div className="design-application">

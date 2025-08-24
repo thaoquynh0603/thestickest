@@ -21,7 +21,11 @@ interface DiscountCodeResult {
   finalAmount: number;
 }
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!, {
+  apiVersion: '2025-07-30.basil',
+  stripeAccount: undefined,
+  betas: ['elements_enable_deferred_intent_beta_1']
+});
 
 export default function StripePayment({ 
   applicationId, 
@@ -132,10 +136,29 @@ export default function StripePayment({
 
       const { sessionId } = await response.json();
 
-      // Load Stripe
-      const stripe = await stripePromise;
-      if (!stripe) {
-        throw new Error('Stripe failed to load');
+      // Load Stripe with error handling
+      let stripe;
+      try {
+        stripe = await stripePromise;
+        if (!stripe) {
+          throw new Error('Stripe failed to load');
+        }
+      } catch (stripeLoadError) {
+        console.error('Stripe loading error:', stripeLoadError);
+        // If it's a locale error, try to reload without locale config
+        if (stripeLoadError instanceof Error && stripeLoadError.message.includes('Cannot find module')) {
+          try {
+            const fallbackStripe = await loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+            if (!fallbackStripe) {
+              throw new Error('Stripe fallback failed to load');
+            }
+            stripe = fallbackStripe;
+          } catch (fallbackError) {
+            throw new Error('Payment system unavailable. Please try again later.');
+          }
+        } else {
+          throw new Error('Payment system unavailable. Please try again later.');
+        }
       }
 
       // Redirect to Checkout

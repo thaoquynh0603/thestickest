@@ -158,6 +158,27 @@
   text-decoration: none;
   box-shadow: 0 4px 0 0 var(--border);
   transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  font-size: clamp(14px, 2.5vw, 16px);
+  line-height: 1.3;
+  text-align: center;
+  width: 70%;
+}
+
+/* Mobile responsive store-link-btn adjustments */
+@media (max-width: 480px) {
+  .store-link-btn {
+    padding: 10px 16px;
+    margin-bottom: 12px;
+    font-size: clamp(13px, 2.2vw, 15px);
+  }
+}
+
+@media (max-width: 360px) {
+  .store-link-btn {
+    padding: 8px 14px;
+    margin-bottom: 10px;
+    font-size: clamp(12px, 2vw, 14px);
+  }
 }
 
 /* Primary CTA used in hero and main call-to-actions */
@@ -171,11 +192,18 @@
   box-shadow: var(--shadow);
   font-weight: 900;
   width: 100%;
-  height: 70px;
-  font-size: 30px;
+  min-height: 70px;
+  height: auto;
+  font-size: clamp(20px, 4vw, 30px);
   text-decoration: none;
   text-align: center;
   transition: transform 140ms ease, box-shadow 140ms ease, background 140ms ease;
+  line-height: 1.2;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  word-wrap: break-word;
+  white-space: normal;
 }
 
 .hero-cta {
@@ -795,7 +823,43 @@ img { display: block; max-width: 100%; height: auto; }
   min-height: 360px;
   display: grid;
   place-items: center;
+  position: relative;
+  overflow: hidden;
 }
+
+/* Mobile responsive hero adjustments */
+@media (max-width: 480px) {
+  .hero {
+    padding: 24px 0 8px;
+  }
+  
+  .hero-grid {
+    gap: 16px;
+  }
+  
+  .hero-visual {
+    min-height: 300px;
+  }
+  
+  .hero-title {
+    font-size: clamp(28px, 5vw, 48px);
+  }
+}
+
+@media (max-width: 360px) {
+  .hero {
+    padding: 20px 0 8px;
+  }
+  
+  .hero-visual {
+    min-height: 280px;
+  }
+  
+  .hero-title {
+    font-size: clamp(24px, 4.5vw, 40px);
+  }
+}
+
 .hero-button { background: white; border: 3px solid var(--border); border-radius: 16px; box-shadow: var(--shadow); padding: 14px 18px; font-weight: 900; }
 .hero-button:hover { transform: translateY(1px); box-shadow: 0 3px 0 0 var(--border); }
 
@@ -821,6 +885,31 @@ img { display: block; max-width: 100%; height: auto; }
 .cta { background: var(--purple-200); padding: 36px; text-align: center; margin-top: 48px; }
 .cta p { font-size: clamp(18px, 2.5vw, 22px); font-weight: 700; }
 .cta .cta-btn { margin-top: 16px; display: inline-block; background: var(--yellow); border: 3px solid var(--border); border-radius: 999px; padding: 14px 24px; box-shadow: var(--shadow); font-weight: 900; }
+
+/* Mobile responsive CTA adjustments */
+@media (max-width: 480px) {
+  .cta { 
+    padding: 24px 20px; 
+    margin-top: 32px; 
+  }
+  
+  .cta p { 
+    font-size: clamp(16px, 2.2vw, 20px); 
+    line-height: 1.4;
+  }
+}
+
+@media (max-width: 360px) {
+  .cta { 
+    padding: 20px 16px; 
+    margin-top: 24px; 
+  }
+  
+  .cta p { 
+    font-size: clamp(14px, 2vw, 18px); 
+    line-height: 1.5;
+  }
+}
 
 /* Footer */
 .footer { padding: 32px 0; color: var(--muted-ink); font-weight: 600; }
@@ -884,6 +973,57 @@ img { display: block; max-width: 100%; height: auto; }
 .worry-card:hover .worry-icon {
   transform: scale(1.1);
   background: var(--surface);
+}
+
+/* Mobile responsive WorryFree adjustments */
+@media (max-width: 480px) {
+  #worry-free { 
+    padding: 24px 0; 
+  }
+  
+  .worry-free-container { 
+    min-height: 500px; 
+  }
+  
+  .worry-card { 
+    padding: 20px; 
+    min-height: 160px; 
+  }
+  
+  .worry-icon { 
+    width: 60px; 
+    height: 60px; 
+    border-radius: 16px; 
+  }
+  
+  .worry-grid {
+    gap: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  #worry-free { 
+    padding: 20px 0; 
+  }
+  
+  .worry-free-container { 
+    min-height: 450px; 
+  }
+  
+  .worry-card { 
+    padding: 16px; 
+    min-height: 140px; 
+  }
+  
+  .worry-icon { 
+    width: 50px; 
+    height: 50px; 
+    border-radius: 12px; 
+  }
+  
+  .worry-grid {
+    gap: 12px;
+  }
 }
 
 /* Sticker Showcase */
@@ -4519,3 +4659,95 @@ img { display: block; max-width: 100%; height: auto; }
   .placeholder-highlight:active {
     transform: translateY(0) scale(0.98);
   }
+
+/* Mobile responsive adjustments for CTA buttons */
+@media (max-width: 480px) {
+  .large-cta {
+    padding: 16px 20px;
+    min-height: 80px;
+    font-size: 18px;
+    line-height: 1.3;
+  }
+  
+  .hero-cta {
+    margin-top: -40px;
+  }
+}
+
+@media (max-width: 360px) {
+  .large-cta {
+    padding: 18px 16px;
+    min-height: 90px;
+    font-size: 16px;
+    line-height: 1.4;
+  }
+}
+
+/* General container improvements for very small screens */
+@media (max-width: 480px) {
+  .container {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+  
+  .card {
+    padding: 20px;
+  }
+}
+
+@media (max-width: 360px) {
+  .container {
+    padding-left: 12px;
+    padding-right: 12px;
+  }
+  
+  .card {
+    padding: 16px;
+  }
+}
+
+/* Button text responsive handling */
+.button-text-responsive {
+  display: block;
+  width: 100%;
+  text-align: center;
+  word-wrap: break-word;
+  white-space: normal;
+  hyphens: auto;
+}
+
+/* Ensure buttons maintain proper spacing on all screen sizes */
+.large-cta .button-text-responsive {
+  line-height: inherit;
+}
+
+/* QuestionRenderer component styles */
+.ai-content-loaded {
+  border-color: #8b5cf6 !important;
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
+  background-color: #faf5ff !important;
+  transition: all 0.3s ease;
+}
+
+.ai-content-loaded:focus {
+  border-color: #7c3aed !important;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2) !important;
+  background-color: #ffffff !important;
+}
+
+.textarea-with-ai {
+  position: relative;
+}
+
+.textarea-container {
+  position: relative;
+}
+
+.ai-inspiration-inline {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  z-index: 10;
+}
+
+

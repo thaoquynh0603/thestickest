@@ -37,6 +37,16 @@ export function createClient() {
           }
         },
       },
+      // Disable realtime features on server-side to avoid websocket warnings
+      realtime: {
+        params: {
+          eventsPerSecond: 0,
+        },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
     }
   );
 }
@@ -57,6 +67,16 @@ export function createBuildTimeClient() {
         remove() {
           // No-op for build time
         },
+      },
+      // Disable realtime features on build-time client
+      realtime: {
+        params: {
+          eventsPerSecond: 0,
+        },
+      },
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
       },
     }
   );

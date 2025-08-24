@@ -1,0 +1,10 @@
+# Resend Email Service
+RESEND_API_KEY=your_resend_api_key_here
+
+# Existing Supabase variables (if not already set)
+NEXT_PUBLIC_SUPABASE_URL=https://hyrjcmrvrxtepvlpmgxs.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your_supabase_service_role_key_here
+
+# Stripe (if not already set)
+STRIPE_SECRET_KEY=your_stripe_secret_key_here
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret_here

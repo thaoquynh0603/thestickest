@@ -128,28 +128,39 @@ function CustomQuestionFlow({ templateId, parentQuestionId, onUpdate, onFileUplo
   );
 }
 
-export function QuestionRenderer(props: QuestionRendererProps) {
-  const { question, value, updateApplicationData, onFileUpload, onFileRemove, onKeyPress, onTextareaKeyPress, applicationId, getPreviewUrls, isUploading } = props;
-  
-  // Safety check to prevent hydration issues
-  if (!question) {
-    return null;
+export function QuestionRenderer({ question, value, updateApplicationData, onFileUpload, onFileRemove, onKeyPress, onTextareaKeyPress, applicationId, getPreviewUrls, isUploading }: QuestionRendererProps) {
+  // Safety check to ensure value is never null/undefined for checkbox questions
+  if (question.question_type === 'checkboxes' && !Array.isArray(value)) {
+    console.warn('QuestionRenderer: Checkbox question received non-array value, fixing:', { questionId: question.id, value });
+    // Return early with a safe fallback
+    return (
+      <div className="form-error">
+        <p>Error loading question options. Please refresh the page.</p>
+      </div>
+    );
   }
-  
+
+  // Safety check for other question types
+  if (value === null || value === undefined) {
+    console.warn('QuestionRenderer: Question received null/undefined value, fixing:', { questionId: question.id, value });
+    // For non-checkbox questions, we can continue with empty string
+  }
+
+  const [choicePageIdx, setChoicePageIdx] = useState(0);
   const [isCustomizing, setCustomizing] = useState(() => {
+    // Initialize isCustomizing based on the current value
     if (typeof value === 'string') {
       if (value === 'custom') return true;
       try {
         const parsed = JSON.parse(value);
         return parsed && typeof parsed === 'object';
       } catch (_) {
-        return false;
+        // not JSON
       }
     }
     return false;
   });
   const PAGE_SIZE = 6;
-  const [choicePageIdx, setChoicePageIdx] = useState(0);
 
   // Reset paging when the available option sets change (either option_items or options)
   useEffect(() => { 
@@ -317,8 +328,25 @@ export function QuestionRenderer(props: QuestionRendererProps) {
       const options = Array.isArray(question.options) ? question.options : [];
       // Ensure selected is always an array, even if value is null/undefined
       const selected = Array.isArray(value) ? value as string[] : [];
+      
+      // Add logging for debugging
+      if (!Array.isArray(value)) {
+        console.warn('QuestionRenderer: Checkbox value is not an array:', value, 'Fixing to empty array');
+      }
+      
       const toggle = (v: string) => { 
-        if (!Array.isArray(selected)) return; // Safety check
+        // Safety check to ensure selected is an array
+        if (!Array.isArray(selected)) {
+          console.error('QuestionRenderer: selected is not an array in toggle function:', selected);
+          return; 
+        }
+        
+        // Safety check for the value parameter
+        if (!v || typeof v !== 'string') {
+          console.error('QuestionRenderer: Invalid value in toggle function:', v);
+          return;
+        }
+        
         const next = selected.includes(v) ? selected.filter(s => s !== v) : [...selected, v]; 
         updateApplicationData(question.id, next); 
       };
@@ -396,40 +424,7 @@ export function QuestionRenderer(props: QuestionRendererProps) {
       return <input type="text" value={typeof value === 'string' ? value : ''} onChange={(e) => updateApplicationData(question.id, e.target.value)} className="form-input" placeholder="Enter your answer..." required={question.is_required} onKeyPress={onKeyPress} />;
   }
 
-  return (
-    <>
-      {/* Component JSX */}
-      <style jsx>{`
-        .ai-content-loaded {
-          border-color: #8b5cf6 !important;
-          box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.1) !important;
-          background-color: #faf5ff !important;
-          transition: all 0.3s ease;
-        }
-
-        .ai-content-loaded:focus {
-          border-color: #7c3aed !important;
-          box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.2) !important;
-          background-color: #ffffff !important;
-        }
-
-        .textarea-with-ai {
-          position: relative;
-        }
-
-        .textarea-container {
-          position: relative;
-        }
-
-        .ai-inspiration-inline {
-          position: absolute;
-          top: 0.5rem;
-          right: 0.5rem;
-          z-index: 10;
-        }
-      `}</style>
-    </>
-  );
+  return null;
 }
 // end of QuestionRenderer
 

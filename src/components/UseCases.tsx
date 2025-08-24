@@ -1,19 +1,23 @@
-type Props = { useCases: string[]; additionalBenefits: string[] };
+type Props = { useCases: string[] | null | undefined; additionalBenefits: string[] | null | undefined };
 
 export default function UseCases({ useCases, additionalBenefits }: Props) {
+  // Add defensive checks for arrays
+  const safeUseCases = useCases || [];
+  const safeAdditionalBenefits = additionalBenefits || [];
+
   return (
     <section id="use-cases" className="usecases container">
       <div className="card" style={{ padding: 24 }}>
         <h3 style={{ marginTop: 0, marginBottom: 12, fontWeight: 900 }}>Perfect for any moment</h3>
         <div className="chips" aria-label="Popular use cases">
-          {useCases.map((c) => (
+          {safeUseCases.map((c) => (
             <span key={c} className="chip">
               {c}
             </span>
           ))}
         </div>
         <ul style={{ marginTop: 18 }}>
-          {additionalBenefits.map((b) => (
+          {safeAdditionalBenefits.map((b) => (
             <li key={b} style={{ fontWeight: 700 }}>
               {b}
             </li>
