@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Product, ProductWithCarousel } from '@/types/database';
 import { ProcessSection } from './ProcessSection';
 import ProductCarousel from './ProductCarousel';
-import { ImagePreloader } from './ImagePreloader';
+import { EnhancedImagePreloader } from './EnhancedImagePreloader';
 import { CarouselDataProcessor } from './CarouselDataProcessor';
 import { ThemeProcessor } from './ThemeProcessor';
 
@@ -21,7 +21,7 @@ export default function CategoryDetail({ product }: CategoryDetailProps) {
   return (
     <>
       {/* Server-side optimizations */}
-      <ImagePreloader product={product} />
+      <EnhancedImagePreloader product={product} />
       <CarouselDataProcessor product={product} />
       <ThemeProcessor product={product} />
       

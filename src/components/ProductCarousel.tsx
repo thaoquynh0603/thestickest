@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { CarouselItem } from '@/types/database';
+import { OptimizedImage } from './OptimizedImage';
 
 type PositionClass = 'top-left' | 'top-right' | 'center-left' | 'center-right' | 'bottom-left' | 'bottom-right';
 
@@ -191,7 +192,16 @@ function ProductCarouselSlides({
     <div className="product-carousel-slides" ref={containerRef}>
       {items.map((item, i) => (
         <div key={item.id} className={`product-slide ${i === index ? 'active' : ''}`}>
-          <img src={item.image_url} alt={item.message_h1} />
+          <OptimizedImage
+            src={item.image_url}
+            alt={item.message_h1}
+            fill
+            quality={80}
+            lazy={i > 0}
+            className="object-cover"
+            maxWidth={1920}
+            maxHeight={1080}
+          />
         </div>
       ))}
 

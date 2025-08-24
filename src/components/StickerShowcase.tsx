@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from 'react';
+import { OptimizedImage } from './OptimizedImage';
 
 type PositionClass = 'top-left' | 'top-right' | 'center-left' | 'center-right' | 'bottom-left' | 'bottom-right';
 type UniqueOverlay = { title: string; bullets: string[]; position: PositionClass };
@@ -257,7 +258,16 @@ function FullBleedCarousel({ items, index, onChange, containerRef, onManualNavig
         if (!item) return null;
         return (
           <div key={i} className={`slide ${i === index ? 'active' : ''}`}>
-            <img src={item.image || ''} alt={item.caption || ''} />
+            <OptimizedImage
+              src={item.image || ''}
+              alt={item.caption || ''}
+              fill
+              quality={80}
+              lazy={i > 0}
+              className="object-cover"
+              maxWidth={1920}
+              maxHeight={1080}
+            />
           </div>
         );
       })}
